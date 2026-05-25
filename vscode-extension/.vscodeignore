@@ -19,3 +19,6 @@ python-backend/.env
 python-backend/test_*.py
 python-backend/.gitignore
 knowledge-base/**/__pycache__/**
+
+# Exclude build artifacts
+*.vsix

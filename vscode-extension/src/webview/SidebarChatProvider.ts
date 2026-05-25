@@ -99,7 +99,7 @@ export class SidebarChatProvider implements vscode.WebviewViewProvider {
             }
 
             const context = getEditorContext();
-            const response = this._backend.chatStream(content, context);
+            const response = this._backend.chatStream(content, context, this._backend.getStudentId());
 
             for await (const event of response) {
                 if (!this._view) return;

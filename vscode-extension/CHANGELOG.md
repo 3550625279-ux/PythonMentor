@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.1] - 2026-05-25
+
+### Fixed
+- Student ID configuration now properly passed to backend
+- Configure API Keys command now opens correct settings filter
+
+### Changed
+- Command titles unified to English
+- Description field translated to English for marketplace
+- Added MIT license field to package manifest
+
 ## [0.1.0] - 2026-05-25
 
 ### Added

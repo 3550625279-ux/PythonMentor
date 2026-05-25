@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('python-mentor.configureApiKeys', () => {
             vscode.commands.executeCommand(
                 'workbench.action.openSettings',
-                '@ext:python-mentor'
+                '@ext:Eddie-58-cgw.pythonmentor'
             );
         })
     );

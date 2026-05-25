@@ -1,10 +1,12 @@
 {
   "name": "pythonmentor",
   "displayName": "PythonMentor - Socratic Python Tutor",
-  "description": "个性化 Python 学习助手 — 苏格拉底式教学",
+  "description": "Personalized Python learning assistant with Socratic teaching method",
   "version": "0.1.1",
   "publisher": "Eddie-58-cgw",
+  "license": "MIT",
   "icon": "images/icon.png",
+  "keywords": ["python", "education", "tutor", "socratic", "learning", "AI"],
   "galleryBanner": {
     "color": "#1e1e1e",
     "theme": "dark"
@@ -42,12 +44,12 @@
     "commands": [
       {
         "command": "python-mentor.openChat",
-        "title": "PythonMentor: 打开聊天",
+        "title": "PythonMentor: Open Chat",
         "icon": "$(comment-discussion)"
       },
       {
         "command": "python-mentor.diagnoseError",
-        "title": "PythonMentor: 诊断错误",
+        "title": "PythonMentor: Diagnose Error",
         "icon": "$(warning)"
       },
       {
@@ -137,6 +139,7 @@
     "typescript": "^5.3.0",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.0",
-    "ts-loader": "^9.5.0"
+    "ts-loader": "^9.5.0",
+    "@vscode/vsce": "^2.0.0"
   }
 }
