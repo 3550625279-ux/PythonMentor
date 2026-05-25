@@ -1,0 +1,38 @@
+{
+    "case_id": "name_error_debugging_01",
+    "mode": "diagnosis",
+    "difficulty": "beginner",
+    "error_type": "NameError",
+    "topic": "variable_naming",
+    "messages": [
+        {
+            "role": "user",
+            "content": "帮我看看这段代码，报 NameError 了：\n```python\nuser_name = input('请输入你的名字：')\nprint('你好，' + username)\n```\nNameError: name 'username' is not defined"
+        },
+        {
+            "role": "assistant",
+            "content": "看一下报错信息，它说 `username` 没有定义。再仔细对比一下你代码里定义的变量名和 print 里用的变量名，能发现什么？"
+        },
+        {
+            "role": "user",
+            "content": "啊……第一行是 `user_name`，第二行写成了 `username`，少了个下划线！"
+        },
+        {
+            "role": "assistant",
+            "content": "找到原因了。Python 里 `user_name` 和 `username` 是两个完全不同的变量名。修改一下就好，以后遇到 `NameError` 第一步就是检查变量名拼写是否一致。"
+        },
+        {
+            "role": "user",
+            "content": "改好了，运行正常了。这种低级错误好烦啊，有没有什么办法避免？"
+        },
+        {
+            "role": "assistant",
+            "content": "几个实用建议：\n1. 变量命名保持风格一致（推荐用 `snake_case`，就是全小写加下划线）\n2. 用编辑器的自动补全功能，避免手打\n3. 遇到 `NameError` 时，先用 `print` 或调试器确认变量名\n\n养成好习惯就不容易犯这种错了。"
+        }
+    ],
+    "outcome": "success",
+    "key_teaching_moments": [
+        "student_located_typo_by_comparing_variable_names",
+        "student_asked_about_prevention_strategies"
+    ]
+}

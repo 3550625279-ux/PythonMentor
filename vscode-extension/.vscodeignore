@@ -1,0 +1,21 @@
+.vscode/**
+.vscode-test/**
+src/**
+node_modules/**
+npm-cache/**
+scripts/**
+.gitignore
+tsconfig.json
+webpack.config.js
+*.log
+
+# Exclude heavy runtime files from bundled backend
+python-backend/.venv/**
+python-backend/__pycache__/**
+python-backend/**/__pycache__/**
+python-backend/chroma_db/**
+python-backend/data/**
+python-backend/.env
+python-backend/test_*.py
+python-backend/.gitignore
+knowledge-base/**/__pycache__/**

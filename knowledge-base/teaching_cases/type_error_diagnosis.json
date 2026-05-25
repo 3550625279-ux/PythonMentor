@@ -1,0 +1,64 @@
+{
+    "case_id": "type_error_diagnosis_01",
+    "mode": "diagnosis",
+    "difficulty": "beginner",
+    "error_type": "TypeError",
+    "topic": "type_casting",
+    "messages": [
+        {
+            "role": "user",
+            "content": "我写了个计算两数之和的程序，运行报错了：\n```python\na = input('请输入第一个数：')\nb = input('请输入第二个数：')\nresult = a + b\nprint('结果是：' + result)\n```\nTypeError: can only concatenate str (not \"int\") to str，这是啥意思啊？"
+        },
+        {
+            "role": "assistant",
+            "content": "报错信息里提到了 `str` 和 `int`，你觉得 Python 在抱怨什么呢？另外，先不管报错，你觉得 `input()` 函数返回的数据是什么类型？"
+        },
+        {
+            "role": "user",
+            "content": "input() 返回的应该是字符串吧……但我想做加法运算啊，字符串加法不就是拼接吗？"
+        },
+        {
+            "role": "assistant",
+            "content": "你说到点子上了。那报错信息说 `can only concatenate str to str`，结合你的代码第 4 行 `print('结果是：' + result)`，你觉得问题出在哪里？"
+        },
+        {
+            "role": "user",
+            "content": "哦！第 3 行的 `a + b`，a 和 b 都是字符串，所以 result 也是字符串。然后第 4 行 `'结果是：' + result` 应该没问题啊，都是字符串拼接。等等，那报错为什么说 int？"
+        },
+        {
+            "role": "assistant",
+            "content": "你仔细看一下报错信息，它说的是第几行出错？再想想，你想要的 `a + b` 是数学加法还是字符串拼接？"
+        },
+        {
+            "role": "user",
+            "content": "我想要数学加法！所以 `a + b` 我其实想让它们当数字加，但 input() 返回的是字符串，所以……我需要用 int() 转换？"
+        },
+        {
+            "role": "assistant",
+            "content": "思路对了。那你想想，应该在哪里加 `int()` 转换？而且转换之后，第 4 行的拼接会不会也出问题？"
+        },
+        {
+            "role": "user",
+            "content": "我想想……在第 2、3 行把 a 和 b 转成 int，然后 result 就是数字了。但第 4 行 `print('结果是：' + result)` 就会报错，因为字符串不能和数字拼接。所以 result 也要用 str() 转一下？"
+        },
+        {
+            "role": "assistant",
+            "content": "完全正确。你能把修改后的完整代码写出来吗？"
+        },
+        {
+            "role": "user",
+            "content": "```python\na = int(input('请输入第一个数：'))\nb = int(input('请输入第二个数：'))\nresult = a + b\nprint('结果是：' + str(result))\n```\n运行成功了！原来 input() 永远返回字符串，需要手动转换类型。"
+        },
+        {
+            "role": "assistant",
+            "content": "总结得很好。记住两个关键点：\n1. `input()` 返回的永远是 `str` 类型\n2. Python 不允许 `str` 和 `int` 直接拼接或运算，需要显式转换\n\n以后遇到类似报错，第一步就是看清楚变量的实际类型。"
+        }
+    ],
+    "outcome": "success",
+    "key_teaching_moments": [
+        "student_identified_input_returns_string",
+        "student_recognized_type_mismatch_in_concatenation",
+        "student_proposed_int_conversion_solution",
+        "student_noticed_second_line_also_needs_fix"
+    ]
+}

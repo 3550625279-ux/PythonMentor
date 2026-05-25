@@ -1,0 +1,142 @@
+{
+  "name": "pythonmentor",
+  "displayName": "PythonMentor - Socratic Python Tutor",
+  "description": "个性化 Python 学习助手 — 苏格拉底式教学",
+  "version": "0.1.1",
+  "publisher": "Eddie-58-cgw",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Education", "Other"],
+  "activationEvents": [
+    "onView:python-mentor.chat",
+    "onCommand:python-mentor.openChat",
+    "onCommand:python-mentor.diagnoseError",
+    "onCommand:python-mentor.startBackend",
+    "onCommand:python-mentor.stopBackend",
+    "onCommand:python-mentor.configureApiKeys"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "python-mentor",
+          "title": "PythonMentor",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "python-mentor": [
+        {
+          "type": "webview",
+          "id": "python-mentor.chat",
+          "name": "Chat"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "python-mentor.openChat",
+        "title": "PythonMentor: 打开聊天",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "python-mentor.diagnoseError",
+        "title": "PythonMentor: 诊断错误",
+        "icon": "$(warning)"
+      },
+      {
+        "command": "python-mentor.startBackend",
+        "title": "PythonMentor: Start Backend Server",
+        "icon": "$(play)"
+      },
+      {
+        "command": "python-mentor.stopBackend",
+        "title": "PythonMentor: Stop Backend Server",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "python-mentor.configureApiKeys",
+        "title": "PythonMentor: Configure API Keys",
+        "icon": "$(settings-gear)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "python-mentor.diagnoseError",
+          "when": "editorHasSelection",
+          "group": "python-mentor"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "PythonMentor",
+      "properties": {
+        "python-mentor.backendUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Python 后端服务地址"
+        },
+        "python-mentor.studentId": {
+          "type": "string",
+          "default": "default",
+          "description": "学生 ID，用于区分不同学生的学习档案"
+        },
+        "python-mentor.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python 解释器路径（留空则自动检测）"
+        },
+        "python-mentor.llmBackend": {
+          "type": "string",
+          "enum": ["ollama", "claude", "openai"],
+          "default": "ollama",
+          "description": "LLM 后端选择"
+        },
+        "python-mentor.claudeApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Claude API Key"
+        },
+        "python-mentor.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key"
+        },
+        "python-mentor.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama 服务地址"
+        },
+        "python-mentor.ollamaModel": {
+          "type": "string",
+          "default": "qwen2.5:14b",
+          "description": "Ollama 模型名"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
+    "watch": "webpack --watch --mode development",
+    "copy-deps": "node scripts/copy-backend.js",
+    "clean-deps": "node scripts/clean-backend.js",
+    "package": "npm run build && npm run copy-deps && vsce package && npm run clean-deps",
+    "publish": "npm run build && npm run copy-deps && vsce publish && npm run clean-deps"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.0",
+    "ts-loader": "^9.5.0"
+  }
+}

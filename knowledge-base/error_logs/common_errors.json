@@ -1,0 +1,742 @@
+[
+    {
+        "error_type": "TypeError",
+        "pattern": "unsupported operand type(s) for +:",
+        "description": "尝试将不同类型的数据用 + 运算符连接，常见于字符串和数字混用",
+        "guide_question": "这个 + 两边分别是什么类型？它们能直接相加吗？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错信息说两种类型不能做 + 运算",
+            "2. 找到 + 运算涉及的两个操作数",
+            "3. 分别检查每个操作数的类型",
+            "4. 用 str() 或 int() 进行显式转换"
+        ],
+        "common_causes": [
+            "字符串和数字直接拼接",
+            "input() 返回字符串但当作数字使用",
+            "格式化字符串时忘记 str() 转换"
+        ],
+        "related_concepts": ["type_casting", "string_operations"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "'NoneType' object is not subscriptable",
+        "description": "对 None 值尝试索引或切片操作",
+        "guide_question": "这个变量的值是 None 吗？函数有没有正确返回值？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说 NoneType 不支持索引操作",
+            "2. 找到被索引的变量",
+            "3. 追溯变量的赋值来源",
+            "4. 发现函数没有 return 语句或条件分支漏了 return"
+        ],
+        "common_causes": [
+            "函数忘记写 return 语句",
+            "条件分支中某些路径没有 return",
+            "字典 .get() 返回 None 后直接索引"
+        ],
+        "related_concepts": ["function_basics", "dict_operations"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "object is not callable",
+        "description": "尝试调用一个不可调用的对象，常见于变量名覆盖了函数名",
+        "guide_question": "你有没有用 list、dict、str 等作为变量名？这会覆盖内置函数。",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说对象不可调用",
+            "2. 检查被调用的名称",
+            "3. 发现该名称被赋值为非函数对象",
+            "4. 重命名变量避免覆盖内置函数"
+        ],
+        "common_causes": [
+            "用 list、dict、str、int 等内置名作为变量名",
+            "把函数的返回值赋给了同名变量",
+            "混淆了属性访问和函数调用"
+        ],
+        "related_concepts": ["scope_and_variables", "function_basics"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "cannot unpack non-iterable",
+        "description": "尝试对非可迭代对象进行解包",
+        "guide_question": "你尝试解包的这个变量，它是一个可迭代对象吗？用 type() 检查一下。",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说对象不可迭代",
+            "2. 找到解包操作的右边",
+            "3. 检查该变量的实际类型",
+            "4. 确保解包的是列表、元组等可迭代对象"
+        ],
+        "common_causes": [
+            "对单个值而非序列进行解包",
+            "函数返回了 None 而非元组",
+            "误以为 range() 返回列表"
+        ],
+        "related_concepts": ["list_operations", "function_basics"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "'tuple' object does not support item assignment",
+        "description": "尝试修改元组中的元素，但元组是不可变的",
+        "guide_question": "元组和列表有什么区别？如果你需要修改元素，应该用什么数据类型？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说元组不支持元素赋值",
+            "2. 理解元组是不可变的",
+            "3. 检查为什么变量是元组而非列表",
+            "4. 将元组改为列表，或用切片创建新元组"
+        ],
+        "common_causes": [
+            "用逗号赋值意外创建了元组",
+            "函数返回元组后尝试修改",
+            "混淆了列表和元组的语法"
+        ],
+        "related_concepts": ["list_operations"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "takes no arguments",
+        "description": "调用方法时传入了不需要的参数",
+        "guide_question": "这个方法的定义接受哪些参数？你传入的参数匹配吗？",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说方法不接受参数",
+            "2. 查看方法的定义",
+            "3. 对比传入的参数",
+            "4. 修正参数或检查是否调用了正确的方法"
+        ],
+        "common_causes": [
+            "对 __init__ 方法签名不熟悉",
+            "调用了错误的方法",
+            "混淆了静态方法和实例方法"
+        ],
+        "related_concepts": ["function_basics"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "ValueError",
+        "pattern": "could not convert string to",
+        "description": "尝试将非数字字符串转换为数值类型",
+        "guide_question": "这个字符串的内容是什么？它能被转换成数字吗？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说字符串无法转换为数字",
+            "2. 打印或检查字符串的实际内容",
+            "3. 发现包含非数字字符（空格、字母、标点）",
+            "4. 先清理字符串再转换，或用 try/except 处理"
+        ],
+        "common_causes": [
+            "input() 返回的字符串包含空格",
+            "用户输入了非数字字符",
+            "字符串包含小数点但用 int() 转换"
+        ],
+        "related_concepts": ["type_casting", "error_handling"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "ValueError",
+        "pattern": "too many values to unpack",
+        "description": "解包时变量数量少于值的数量",
+        "guide_question": "左边有多少个变量？右边有多少个值？数量一样吗？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说值太多无法解包",
+            "2. 数一下左边变量的个数",
+            "3. 数一下右边值的个数",
+            "4. 用 * 收集多余值，或增加变量"
+        ],
+        "common_causes": [
+            "对字符串 split() 结果解包时数量不匹配",
+            "列表元素数量与变量数不一致",
+            "CSV 行的列数与预期不同"
+        ],
+        "related_concepts": ["list_operations", "string_operations"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "ValueError",
+        "pattern": "not enough values to unpack",
+        "description": "解包时变量数量多于值的数量",
+        "guide_question": "左边有多少个变量？右边有多少个值？数量一样吗？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说值不够无法解包",
+            "2. 数一下左边变量的个数",
+            "3. 数一下右边值的个数",
+            "4. 减少变量或用 * 收集"
+        ],
+        "common_causes": [
+            "空列表或短列表解包",
+            "split() 分割结果比预期少",
+            "迭代器提前耗尽"
+        ],
+        "related_concepts": ["list_operations"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "IndexError",
+        "pattern": "list index out of range",
+        "description": "访问的索引超出了列表的有效范围",
+        "guide_question": "列表的长度是多少？你访问的索引是多少？索引从几开始？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说索引超出范围",
+            "2. 用 len() 检查列表长度",
+            "3. 检查访问的索引值",
+            "4. 理解索引从 0 开始，最大索引 = len - 1"
+        ],
+        "common_causes": [
+            "索引从 1 开始而非 0",
+            "循环中索引越界",
+            "空列表却尝试访问元素"
+        ],
+        "related_concepts": ["list_operations", "loop_control"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "KeyError",
+        "pattern": "",
+        "description": "尝试访问字典中不存在的键",
+        "guide_question": "字典里有哪些键？你访问的键在其中吗？用 .get() 可以避免这个错误。",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说键不存在",
+            "2. 用 .keys() 查看字典所有键",
+            "3. 检查访问的键是否拼写正确",
+            "4. 用 .get() 提供默认值，或先检查键是否存在"
+        ],
+        "common_causes": [
+            "键名拼写错误",
+            "大小写不匹配",
+            "JSON 数据结构与预期不同"
+        ],
+        "related_concepts": ["dict_operations"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "AttributeError",
+        "pattern": "'str' object has no attribute",
+        "description": "调用了字符串不具备的方法，常见于混淆了字符串和列表",
+        "guide_question": "这个变量是什么类型？这个类型有哪些方法？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说对象没有该属性",
+            "2. 用 type() 检查对象类型",
+            "3. 确认该类型是否支持此方法",
+            "4. 转换类型或使用正确的方法"
+        ],
+        "common_causes": [
+            "对字符串用了列表的方法（如 append）",
+            "对列表用了字符串的方法（如 split）",
+            "变量类型与预期不同"
+        ],
+        "related_concepts": ["string_operations", "list_operations", "type_casting"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "AttributeError",
+        "pattern": "'NoneType' object has no attribute",
+        "description": "变量值为 None，却尝试调用其方法",
+        "guide_question": "这个变量的值是 None 吗？在调用方法前检查一下。",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说 NoneType 没有该属性",
+            "2. 追溯变量赋值来源",
+            "3. 发现函数未返回值或条件分支返回了 None",
+            "4. 修复函数的 return 逻辑"
+        ],
+        "common_causes": [
+            "函数忘记 return",
+            "方法链中某一步返回了 None",
+            "变量被错误地赋值为 None"
+        ],
+        "related_concepts": ["function_basics"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "AttributeError",
+        "pattern": "'list' object has no attribute 'split'",
+        "description": "对列表使用了字符串的方法",
+        "guide_question": "你操作的是列表还是字符串？split() 是哪个类型的方法？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说列表没有 split 方法",
+            "2. 理解 split() 是字符串的方法",
+            "3. 检查变量为什么是列表而非字符串",
+            "4. 确认数据类型后使用正确的方法"
+        ],
+        "common_causes": [
+            "已经 split 过一次，结果是列表",
+            "数据来源与预期类型不同",
+            "混淆了字符串和列表的操作"
+        ],
+        "related_concepts": ["string_operations", "list_operations"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "NameError",
+        "pattern": "is not defined",
+        "description": "使用了未定义的变量，可能是拼写错误或作用域问题",
+        "guide_question": "这个变量定义了吗？拼写是否正确？是否在另一个函数内定义的？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说名称未定义",
+            "2. 检查变量名拼写",
+            "3. 检查变量是否在正确的作用域内定义",
+            "4. 在使用前定义变量，或用 global/nonlocal 声明"
+        ],
+        "common_causes": [
+            "变量名拼写错误",
+            "变量在函数内定义但函数未被调用",
+            "变量在 if/else 分支中定义但走了另一个分支"
+        ],
+        "related_concepts": ["scope_and_variables"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "NameError",
+        "pattern": "name 'true' is not defined",
+        "description": "布尔值首字母写成了小写，Python 中是 True/False",
+        "guide_question": "Python 中的布尔值怎么写？和 JavaScript 的 true/false 有什么不同？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说 'true' 未定义",
+            "2. 理解 Python 布尔值首字母必须大写",
+            "3. 将 true 改为 True，false 改为 False",
+            "4. 注意 None 也是大写开头"
+        ],
+        "common_causes": [
+            "从 JavaScript 转来的习惯",
+            "从其他语言的布尔值写法",
+            "打字时忘记大写"
+        ],
+        "related_concepts": ["scope_and_variables"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "ImportError",
+        "pattern": "cannot import name",
+        "description": "从模块中导入了不存在的名称",
+        "guide_question": "你确定这个函数名正确吗？用 dir(module) 查看模块中有哪些名称。",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说无法导入该名称",
+            "2. 检查模块中是否真的有这个名称",
+            "3. 用 dir(module) 列出所有可用名称",
+            "4. 修正名称或检查模块版本"
+        ],
+        "common_causes": [
+            "函数名拼写错误",
+            "模块版本不同导致 API 变化",
+            "循环导入"
+        ],
+        "related_concepts": ["scope_and_variables"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "ModuleNotFoundError",
+        "pattern": "No module named",
+        "description": "Python 找不到指定的模块，可能是未安装",
+        "guide_question": "这个模块安装了吗？用 pip list 检查一下。你用的是哪个 Python 环境？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说找不到模块",
+            "2. 用 pip list 检查是否安装",
+            "3. 检查是否在正确的虚拟环境中",
+            "4. 用 pip install 安装模块"
+        ],
+        "common_causes": [
+            "模块未安装",
+            "在错误的虚拟环境中",
+            "模块名拼写错误"
+        ],
+        "related_concepts": ["error_handling"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "SyntaxError",
+        "pattern": "invalid syntax",
+        "description": "代码不符合 Python 语法规则",
+        "guide_question": "报错的那一行，有没有缺少括号、引号？是不是把 == 写成了 =？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错指向某一行",
+            "2. 检查该行的括号、引号是否配对",
+            "3. 检查运算符是否正确（= vs ==）",
+            "4. 检查是否有多余的逗号或缺少的冒号"
+        ],
+        "common_causes": [
+            "if 语句末尾忘记冒号",
+            "括号或引号不配对",
+            "把 == 写成 ="
+        ],
+        "related_concepts": ["function_basics", "loop_control"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "SyntaxError",
+        "pattern": "EOL while scanning string literal",
+        "description": "字符串没有正确关闭，缺少引号",
+        "guide_question": "你的字符串引号配对了吗？有没有在字符串中间不小心用了同样的引号？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说字符串未结束",
+            "2. 检查引号是否配对",
+            "3. 检查字符串内是否有同类引号",
+            "4. 用转义或换一种引号"
+        ],
+        "common_causes": [
+            "忘记关闭引号",
+            "字符串内有同类引号未转义",
+            "多行字符串未用三引号"
+        ],
+        "related_concepts": ["string_operations"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "IndentationError",
+        "pattern": "expected an indented block",
+        "description": "函数体、循环体或条件分支缺少缩进",
+        "guide_question": "函数体、if/else 分支、循环体的代码是否都正确缩进了？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说期望缩进块",
+            "2. 检查冒号后的下一行",
+            "3. 确认函数体/if-else/循环体有缩进",
+            "4. 统一使用 4 个空格缩进"
+        ],
+        "common_causes": [
+            "if/else/for/def 后忘记缩进",
+            "空的代码块需要 pass",
+            "缩进不一致"
+        ],
+        "related_concepts": ["function_basics", "loop_control"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "IndentationError",
+        "pattern": "unindent does not match",
+        "description": "缩进层级不匹配，常见于 Tab 和空格混用",
+        "guide_question": "检查一下缩进，是不是 Tab 和空格混用了？VSCode 可以显示空白字符。",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说缩进不匹配",
+            "2. 显示空白字符（VSCode: View → Render Whitespace）",
+            "3. 发现 Tab 和空格混用",
+            "4. 统一转换为空格（4个）"
+        ],
+        "common_causes": [
+            "Tab 和空格混用",
+            "从不同来源复制代码",
+            "编辑器设置不一致"
+        ],
+        "related_concepts": [],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "ZeroDivisionError",
+        "pattern": "division by zero",
+        "description": "除数为零",
+        "guide_question": "除数是从哪里来的？在什么情况下它可能是零？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说除以零",
+            "2. 找到除法运算",
+            "3. 检查除数的来源",
+            "4. 添加零值检查或 try/except"
+        ],
+        "common_causes": [
+            "除数来自用户输入为 0",
+            "循环计算中分母为 0",
+            "列表长度为 0 时做了除法"
+        ],
+        "related_concepts": ["error_handling"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "FileNotFoundError",
+        "pattern": "No such file or directory",
+        "description": "尝试打开不存在的文件",
+        "guide_question": "文件路径正确吗？文件名拼写对吗？当前工作目录是什么？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说文件不存在",
+            "2. 用 os.path.exists() 检查路径",
+            "3. 检查当前工作目录 os.getcwd()",
+            "4. 使用绝对路径或修正相对路径"
+        ],
+        "common_causes": [
+            "文件名拼写错误",
+            "相对路径的基准目录不对",
+            "文件扩展名漏了"
+        ],
+        "related_concepts": ["file_io"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "PermissionError",
+        "pattern": "Permission denied",
+        "description": "没有足够的权限访问文件",
+        "guide_question": "你有读写这个文件的权限吗？文件是否被其他程序打开了？",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说权限被拒绝",
+            "2. 检查文件是否被其他程序占用",
+            "3. 检查文件权限设置",
+            "4. 关闭占用程序或用管理员权限运行"
+        ],
+        "common_causes": [
+            "文件被其他程序打开",
+            "没有写入权限",
+            "尝试写入系统目录"
+        ],
+        "related_concepts": ["file_io"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "RecursionError",
+        "pattern": "maximum recursion depth exceeded",
+        "description": "递归调用层数过深，通常是缺少终止条件",
+        "guide_question": "你的递归函数有终止条件吗？在什么情况下递归会停止？",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说递归深度超限",
+            "2. 检查递归函数的终止条件",
+            "3. 确认终止条件一定能被满足",
+            "4. 检查递归参数是否在每次调用中变化"
+        ],
+        "common_causes": [
+            "忘记写终止条件",
+            "终止条件永远不会为真",
+            "递归参数没有向终止方向变化"
+        ],
+        "related_concepts": ["function_basics"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "StopIteration",
+        "pattern": "",
+        "description": "迭代器耗尽后继续调用 next()",
+        "guide_question": "迭代器里还有元素吗？用 for 循环是不是更方便？",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说迭代器已耗尽",
+            "2. 理解迭代器是一次性的",
+            "3. 检查是否多次调用了 next()",
+            "4. 改用 for 循环或转为列表"
+        ],
+        "common_causes": [
+            "对迭代器多次调用 next()",
+            "不知道迭代器是一次性的",
+            "在生成器上手动迭代"
+        ],
+        "related_concepts": ["loop_control"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "UnicodeDecodeError",
+        "pattern": "codec can't decode",
+        "description": "用错误的编码读取文件",
+        "guide_question": "这个文件是什么编码的？试试用 encoding='gbk' 或 errors='ignore'。",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说编码无法解码",
+            "2. 检查文件的实际编码",
+            "3. 在 open() 中指定正确的 encoding 参数",
+            "4. 或用 errors='ignore' 跳过无法解码的字节"
+        ],
+        "common_causes": [
+            "中文文件用 utf-8 打开但实际是 gbk",
+            "二进制文件被当作文本打开",
+            "文件包含损坏的字节"
+        ],
+        "related_concepts": ["file_io"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "UnicodeEncodeError",
+        "pattern": "codec can't encode",
+        "description": "尝试写入包含无法编码字符的文本",
+        "guide_question": "你要写入的文本包含什么特殊字符？试试指定正确的编码。",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说编码无法处理某些字符",
+            "2. 检查要写入的文本内容",
+            "3. 指定支持该字符的编码（如 utf-8）",
+            "4. 或用 errors='replace' 替换无法编码的字符"
+        ],
+        "common_causes": [
+            "默认编码不支持中文",
+            "包含特殊 Unicode 字符",
+            "终端编码与文件编码不匹配"
+        ],
+        "related_concepts": ["file_io", "string_operations"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "'int' object is not iterable",
+        "description": "尝试对整数进行迭代操作",
+        "guide_question": "你尝试遍历的变量是什么类型？它是可迭代的吗？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说整数不可迭代",
+            "2. 找到 for 循环中的迭代对象",
+            "3. 检查该变量的实际类型",
+            "4. 用 range() 生成数字序列，或检查变量赋值"
+        ],
+        "common_causes": [
+            "误以为数字可以直接 for 循环",
+            "函数返回了数字而非列表",
+            "变量被意外赋值为数字"
+        ],
+        "related_concepts": ["loop_control", "type_casting"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "argument of type 'int' is not iterable",
+        "description": "对整数使用了 in 运算符进行成员检测",
+        "guide_question": "in 运算符左边是值，右边应该是列表、字符串等可迭代对象，你检查一下。",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说整数不可迭代",
+            "2. 找到 in 运算符的右边",
+            "3. 发现右边是数字而非集合",
+            "4. 改为列表、字符串等可迭代对象"
+        ],
+        "common_causes": [
+            "误把数字当集合使用",
+            "变量类型与预期不同",
+            "混淆了 == 和 in"
+        ],
+        "related_concepts": ["list_operations", "type_casting"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "ValueError",
+        "pattern": "invalid literal for int()",
+        "description": "int() 无法将非数字字符串转换为整数",
+        "guide_question": "这个字符串能转换成整数吗？它是不是包含小数点或其他字符？",
+        "difficulty": "beginner",
+        "reasoning_chain": [
+            "1. 报错说字符串无法转为整数",
+            "2. 检查字符串内容",
+            "3. 发现包含小数点或非数字字符",
+            "4. 用 float() 处理小数，或先清理字符串"
+        ],
+        "common_causes": [
+            "字符串包含小数点（应用 float）",
+            "用户输入了非数字",
+            "字符串包含空格或特殊字符"
+        ],
+        "related_concepts": ["type_casting"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "AttributeError",
+        "pattern": "can't set attribute",
+        "description": "尝试给只读属性赋值",
+        "guide_question": "这个属性是不是用 @property 定义的？只读属性不能直接赋值。",
+        "difficulty": "advanced",
+        "reasoning_chain": [
+            "1. 报错说无法设置属性",
+            "2. 检查类中是否有 @property 装饰器",
+            "3. 确认是否有对应的 @xxx.setter",
+            "4. 添加 setter 或改用其他方式"
+        ],
+        "common_causes": [
+            "@property 只定义了 getter 没有 setter",
+            "尝试修改外部库的只读属性",
+            "对 @property 理解不足"
+        ],
+        "related_concepts": ["function_basics"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "RuntimeError",
+        "pattern": "dictionary changed size during iteration",
+        "description": "在遍历字典的同时修改了字典的大小",
+        "guide_question": "你是不是在 for 循环里添加或删除了字典的键？先复制一份再修改。",
+        "difficulty": "advanced",
+        "reasoning_chain": [
+            "1. 报错说迭代时字典大小改变",
+            "2. 找到遍历字典的循环",
+            "3. 发现循环体内有添加/删除操作",
+            "4. 先 list(dict.keys()) 复制键列表，再迭代修改"
+        ],
+        "common_causes": [
+            "for 循环中删除字典的键",
+            "for 循环中添加新的键值对",
+            "不知道迭代时不能修改容器大小"
+        ],
+        "related_concepts": ["dict_operations", "loop_control"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "TypeError",
+        "pattern": "missing 1 required positional argument: 'self'",
+        "description": "调用实例方法时没有传入 self（通常是直接用类名调用）",
+        "guide_question": "你是用实例调用的方法，还是直接用类名调用的？",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说缺少 self 参数",
+            "2. 检查是用类名还是实例调用",
+            "3. 发现用了 ClassName.method() 而非 instance.method()",
+            "4. 先创建实例，再调用方法"
+        ],
+        "common_causes": [
+            "直接用类名调用实例方法",
+            "忘记创建实例",
+            "对 self 参数理解不足"
+        ],
+        "related_concepts": ["function_basics"],
+        "guidance_strategy": "socratic"
+    },
+    {
+        "error_type": "UnboundLocalError",
+        "pattern": "local variable referenced before assignment",
+        "description": "在赋值之前使用了局部变量，常见于函数内修改全局变量",
+        "guide_question": "这个变量在函数内有没有用 global 声明？或者是不是在赋值前就使用了？",
+        "difficulty": "intermediate",
+        "reasoning_chain": [
+            "1. 报错说局部变量在赋值前被引用",
+            "2. 检查函数内是否有对该变量的赋值",
+            "3. 发现 Python 将其视为局部变量",
+            "4. 用 global 声明，或避免在函数内修改全局变量"
+        ],
+        "common_causes": [
+            "函数内修改全局变量但忘记 global",
+            "条件分支中某些路径未赋值",
+            "变量名与外层作用域冲突"
+        ],
+        "related_concepts": ["scope_and_variables"],
+        "guidance_strategy": "diagnosis"
+    },
+    {
+        "error_type": "OverflowError",
+        "pattern": "math range error",
+        "description": "数值运算结果超出了浮点数的表示范围",
+        "guide_question": "你的计算结果是不是太大了？检查一下递推公式。",
+        "difficulty": "advanced",
+        "reasoning_chain": [
+            "1. 报错说数值溢出",
+            "2. 检查计算公式",
+            "3. 发现结果超出了浮点数范围",
+            "4. 用 math.log 等方式避免直接计算大数"
+        ],
+        "common_causes": [
+            "阶乘计算增长太快",
+            "递推公式发散",
+            "指数运算结果过大"
+        ],
+        "related_concepts": ["function_basics"],
+        "guidance_strategy": "socratic"
+    }
+]

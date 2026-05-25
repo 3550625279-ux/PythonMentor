@@ -1,0 +1,278 @@
+[
+    {
+        "concept_id": "type_casting",
+        "name": "类型转换",
+        "description": "在不同数据类型之间转换值，是 Python 编程中最基础也最容易出错的概念之一。",
+        "common_misconceptions": [
+            "以为 int('3.14') 能直接得到 3（会报 ValueError，需要先 float 再 int）",
+            "以为 str(42) 会改变原变量的类型（实际上是创建了新的字符串对象）",
+            "以为 bool(0) 和 bool('') 的结果是 None（实际都是 False）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "age = input('请输入年龄: ')\nprint(age + 1)",
+                "explanation": "input() 返回的是字符串，不能直接与整数相加，需要 int(age) 转换"
+            },
+            {
+                "level": "intermediate",
+                "code": "price = '3.14'\nresult = int(float(price))\nprint(result)  # 输出 3",
+                "explanation": "字符串转整数需要先转浮点数再转整数，直接 int('3.14') 会报错"
+            }
+        ],
+        "related_errors": [
+            "TypeError: unsupported operand type(s)",
+            "ValueError: invalid literal for int() with base 10"
+        ],
+        "difficulty": "beginner"
+    },
+    {
+        "concept_id": "string_operations",
+        "name": "字符串操作",
+        "description": "字符串是不可变的字符序列，掌握字符串的常用方法和格式化方式是 Python 编程的基本功。",
+        "common_misconceptions": [
+            "以为字符串可以通过索引修改单个字符（如 s[0] = 'a'），但字符串是不可变类型",
+            "以为 split() 默认按空格分割时会保留多个连续空格（实际会合并连续空白符）",
+            "混淆 f-string 和 format() 的语法，以为 f-string 里可以直接用反斜杠"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "s = 'Hello'\ns[0] = 'h'",
+                "explanation": "字符串是不可变的，不能通过索引赋值修改。应该用 s = 'h' + s[1:]"
+            },
+            {
+                "level": "intermediate",
+                "code": "words = '  hello   world  '.split()\nprint(words)  # ['hello', 'world']",
+                "explanation": "split() 不带参数时，会按任意空白字符分割并自动忽略首尾和连续空格"
+            }
+        ],
+        "related_errors": [
+            "TypeError: 'str' object does not support item assignment",
+            "AttributeError: 'str' object has no attribute",
+            "IndexError: string index out of range"
+        ],
+        "difficulty": "beginner"
+    },
+    {
+        "concept_id": "list_operations",
+        "name": "列表操作",
+        "description": "列表是 Python 中最常用的数据结构，支持增删改查和各种内置方法。",
+        "common_misconceptions": [
+            "以为 list.sort() 会返回排序后的新列表（实际是原地排序，返回 None）",
+            "以为 remove() 会删除所有匹配元素（实际只删除第一个匹配项）",
+            "以为对列表切片赋值时长度必须一致（实际可以不等长，会自动扩展或收缩）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "nums = [3, 1, 2]\nresult = nums.sort()\nprint(result)  # None",
+                "explanation": "sort() 是原地排序，返回 None。要用 sorted(nums) 才能获取新列表"
+            },
+            {
+                "level": "intermediate",
+                "code": "a = [1, 2, 3]\nb = a\nb.append(4)\nprint(a)  # [1, 2, 3, 4]",
+                "explanation": "b = a 只是引用赋值，a 和 b 指向同一个列表对象。要用 b = a.copy() 才能独立复制"
+            }
+        ],
+        "related_errors": [
+            "IndexError: list index out of range",
+            "TypeError: 'NoneType' object is not iterable",
+            "ValueError: list.remove(x): x not in list"
+        ],
+        "difficulty": "beginner"
+    },
+    {
+        "concept_id": "dict_operations",
+        "name": "字典操作",
+        "description": "字典是基于哈希表的键值对集合，是 Python 中最重要的映射类型。",
+        "common_misconceptions": [
+            "以为 dict[key] 在键不存在时会返回 None（实际会抛出 KeyError）",
+            "以为字典的键可以是列表（实际必须是不可变类型，如字符串、数字、元组）",
+            "以为遍历字典时可以同时修改字典（实际会抛出 RuntimeError）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "d = {'name': 'Alice'}\nprint(d['age'])",
+                "explanation": "访问不存在的键会报 KeyError，应该用 d.get('age', 默认值)"
+            },
+            {
+                "level": "intermediate",
+                "code": "scores = {'math': 90, 'english': 85}\nfor k, v in scores.items():\n    print(f'{k}: {v}')",
+                "explanation": "使用 .items() 同时获取键和值进行遍历，比单独遍历键再取值更高效清晰"
+            }
+        ],
+        "related_errors": [
+            "KeyError",
+            "TypeError: unhashable type: 'list'"
+        ],
+        "difficulty": "beginner"
+    },
+    {
+        "concept_id": "loop_control",
+        "name": "循环控制",
+        "description": "循环是编程中重复执行代码块的核心机制，Python 提供 for 和 while 两种循环以及 break/continue 控制流。",
+        "common_misconceptions": [
+            "以为 for-else 中的 else 在 break 后也会执行（实际 break 会跳过 else）",
+            "以为 range(5) 生成 [0,1,2,3,4,5]（实际是 [0,1,2,3,4]，不包含右端点）",
+            "以为在循环中修改迭代列表会影响当前遍历（实际可能导致跳过或重复元素）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "for i in range(5):\n    if i == 3:\n        break\nelse:\n    print('完成')\nprint('结束')",
+                "explanation": "for-else 中，只有循环正常结束（没有 break）时才执行 else。这里 break 触发后 else 被跳过"
+            },
+            {
+                "level": "intermediate",
+                "code": "items = [1, 2, 3, 4, 5]\nfor item in items:\n    if item == 3:\n        items.remove(item)\nprint(items)",
+                "explanation": "遍历时修改列表会导致迭代器行为异常，可能跳过元素。应该遍历列表的副本或用列表推导式"
+            }
+        ],
+        "related_errors": [
+            "IndexError: list index out of range",
+            "StopIteration"
+        ],
+        "difficulty": "beginner"
+    },
+    {
+        "concept_id": "function_basics",
+        "name": "函数基础",
+        "description": "函数是组织代码的基本单元，通过参数传递和返回值实现代码复用和模块化。",
+        "common_misconceptions": [
+            "以为函数没有 return 语句会返回 0（实际返回 None）",
+            "以为默认参数中的可变对象（如列表）每次调用都会重新创建（实际共享同一个对象）",
+            "以为函数内赋值会自动创建局部变量（如果要修改全局变量需要用 global 声明）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "def add(a, b):\n    result = a + b\n\nx = add(1, 2)\nprint(x + 5)",
+                "explanation": "函数没有 return 语句，add() 返回 None。None + 5 会报 TypeError"
+            },
+            {
+                "level": "intermediate",
+                "code": "def append_to(item, lst=[]):\n    lst.append(item)\n    return lst\n\nprint(append_to(1))  # [1]\nprint(append_to(2))  # [1, 2] ！",
+                "explanation": "默认参数是可变列表时，所有调用共享同一个列表对象。应该用 lst=None 然后在函数内 lst = lst or []"
+            }
+        ],
+        "related_errors": [
+            "TypeError: 'NoneType' object is not subscriptable",
+            "UnboundLocalError: local variable referenced before assignment",
+            "TypeError: add() missing 1 required positional argument"
+        ],
+        "difficulty": "beginner"
+    },
+    {
+        "concept_id": "scope_and_variables",
+        "name": "作用域与变量",
+        "description": "Python 使用 LEGB 规则（Local, Enclosing, Global, Built-in）查找变量，理解作用域对避免命名冲突至关重要。",
+        "common_misconceptions": [
+            "以为在函数内 print 变量就能读取外层变量，但如果函数内有同名赋值就会报 UnboundLocalError",
+            "以为 global 和 nonlocal 是一样的（global 用于模块级，nonlocal 用于外层嵌套函数）",
+            "以为变量在 for 循环结束后就不存在了（Python 的 for 循环不创建新作用域）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "x = 10\ndef foo():\n    print(x)\n    x = 20\nfoo()",
+                "explanation": "函数内有 x = 20 的赋值，Python 会将 x 视为局部变量。print(x) 在赋值之前执行，导致 UnboundLocalError"
+            },
+            {
+                "level": "advanced",
+                "code": "def outer():\n    count = 0\n    def inner():\n        nonlocal count\n        count += 1\n        return count\n    return inner\n\ncounter = outer()\nprint(counter())  # 1\nprint(counter())  # 2",
+                "explanation": "nonlocal 让内层函数修改外层函数的变量，配合闭包实现计数器功能"
+            }
+        ],
+        "related_errors": [
+            "UnboundLocalError: local variable referenced before assignment",
+            "NameError: name 'x' is not defined"
+        ],
+        "difficulty": "intermediate"
+    },
+    {
+        "concept_id": "error_handling",
+        "name": "异常处理",
+        "description": "异常处理使用 try-except 机制捕获和处理运行时错误，是编写健壮程序的关键技能。",
+        "common_misconceptions": [
+            "以为 except 能捕获所有类型的错误就用裸 except（实际也会捕获 KeyboardInterrupt 等系统异常）",
+            "以为 try 块中异常发生后的代码会继续执行（实际会跳到对应的 except 块）",
+            "以为 finally 块可以替代 return（实际 finally 中的 return 会覆盖 try 中的 return）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print('不能除以零')\nprint(result)",
+                "explanation": "result 只在 try 块的除法成功时赋值。异常发生后 result 未定义，print(result) 会报 NameError"
+            },
+            {
+                "level": "intermediate",
+                "code": "def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return float('inf')\n    except TypeError:\n        raise ValueError('参数必须是数字')\n    finally:\n        print('计算完成')",
+                "explanation": "展示多层异常处理：捕获特定异常、转换异常类型、以及 finally 始终执行的特性"
+            }
+        ],
+        "related_errors": [
+            "ZeroDivisionError: division by zero",
+            "FileNotFoundError: No such file or directory",
+            "ValueError",
+            "TypeError"
+        ],
+        "difficulty": "intermediate"
+    },
+    {
+        "concept_id": "file_io",
+        "name": "文件操作",
+        "description": "文件读写是程序与外部数据交互的基本方式，Python 使用内置的 open() 函数和上下文管理器处理文件。",
+        "common_misconceptions": [
+            "以为 read() 之后文件指针还在开头（实际指针移到末尾，再次 read() 会返回空字符串）",
+            "以为 open() 打开文件后不关闭也没关系（会占用文件描述符，可能导致资源泄漏）",
+            "以为写模式 'w' 会在文件末尾追加（实际会清空原文件内容，追加要用 'a' 模式）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "f = open('data.txt', 'r')\ncontent = f.read()\ncontent2 = f.read()\nprint(content2)  # 空字符串",
+                "explanation": "第一次 read() 后文件指针已到末尾，再次 read() 返回空字符串。需要 f.seek(0) 回到开头"
+            },
+            {
+                "level": "intermediate",
+                "code": "with open('data.txt', 'w') as f:\n    f.write('Hello\\n')\n    f.write('World\\n')\n\nwith open('data.txt', 'r') as f:\n    lines = f.readlines()\nprint(lines)  # ['Hello\\n', 'World\\n']",
+                "explanation": "使用 with 语句自动管理文件关闭，readlines() 返回包含换行符的行列表"
+            }
+        ],
+        "related_errors": [
+            "FileNotFoundError: No such file or directory",
+            "PermissionError: Permission denied",
+            "UnicodeDecodeError: 'utf-8' codec can't decode"
+        ],
+        "difficulty": "intermediate"
+    },
+    {
+        "concept_id": "list_comprehension",
+        "name": "列表推导式",
+        "description": "列表推导式是 Python 中简洁创建列表的语法糖，比等价的 for 循环更加 Pythonic。",
+        "common_misconceptions": [
+            "以为列表推导式和生成器表达式是一样的（推导式立即计算所有元素，生成器是惰性求值）",
+            "以为列表推导式里不能有多个 for 循环（实际可以嵌套多个 for 和 if）",
+            "以为所有复杂的列表操作都应该用推导式（过于复杂的逻辑会降低可读性，应该用普通循环）"
+        ],
+        "teaching_examples": [
+            {
+                "level": "beginner",
+                "code": "squares = [x**2 for x in range(10) if x % 2 == 0]\nprint(squares)  # [0, 4, 16, 36, 64]",
+                "explanation": "列表推导式可以同时包含循环和条件过滤，等价于先 for 循环再 if 判断的写法"
+            },
+            {
+                "level": "intermediate",
+                "code": "matrix = [[1,2,3], [4,5,6], [7,8,9]]\nflat = [num for row in matrix for num in row]\nprint(flat)  # [1,2,3,4,5,6,7,8,9]",
+                "explanation": "嵌套的 for 循环在推导式中的顺序与普通嵌套循环相同：外层在前，内层在后"
+            }
+        ],
+        "related_errors": [
+            "SyntaxError: invalid syntax",
+            "TypeError: 'generator' object is not subscriptable"
+        ],
+        "difficulty": "intermediate"
+    }
+]

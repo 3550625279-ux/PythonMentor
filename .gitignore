@@ -1,0 +1,28 @@
+# Environment
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# Data (runtime generated)
+data/
+chroma_db/
+
+# Node
+node_modules/
+npm-cache/
+vscode-extension/dist/
+vscode-extension/out/
+
+# Build artifacts
+*.vsix
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

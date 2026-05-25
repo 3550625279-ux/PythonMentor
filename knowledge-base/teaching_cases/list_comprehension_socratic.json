@@ -1,0 +1,72 @@
+{
+    "case_id": "list_comprehension_socratic_01",
+    "mode": "socratic",
+    "difficulty": "intermediate",
+    "error_type": null,
+    "topic": "list_comprehension",
+    "messages": [
+        {
+            "role": "user",
+            "content": "我看到别人代码里有这种写法 `squares = [x**2 for x in range(10)]`，一行就搞定了，但我不太理解这是什么语法。"
+        },
+        {
+            "role": "assistant",
+            "content": "这是列表推导式。在解释之前，你先用你已经会的知识，写一个普通的 for 循环来实现同样的功能：生成 0 到 9 的平方数列表。"
+        },
+        {
+            "role": "user",
+            "content": "这个我会：\n```python\nsquares = []\nfor x in range(10):\n    squares.append(x**2)\n```"
+        },
+        {
+            "role": "assistant",
+            "content": "很好。现在对比一下你的代码和那一行推导式：\n\n你的：`squares = []` → `for x in range(10)` → `squares.append(x**2)`\n推导式：`[x**2 for x in range(10)]`\n\n你能不能从推导式里找到对应的三个部分？"
+        },
+        {
+            "role": "user",
+            "content": "嗯……`x**2` 对应 `append(x**2)`，`for x in range(10)` 对应循环那行，方括号 `[]` 对应 `squares = []`。"
+        },
+        {
+            "role": "assistant",
+            "content": "完全正确。列表推导式的结构就是：\n```\n[表达式 for 变量 in 可迭代对象]\n```\n它把\"创建空列表 → 循环 → 添加元素\"三步压缩成了一步。\n\n现在我给你出个小练习：如果我只想保留偶数的平方呢？你能先用普通的 for 循环写出来吗？"
+        },
+        {
+            "role": "user",
+            "content": "```python\nresult = []\nfor x in range(10):\n    if x % 2 == 0:\n        result.append(x**2)\n```"
+        },
+        {
+            "role": "assistant",
+            "content": "很好。那根据刚才的对应关系，你觉得推导式里应该怎么加这个 `if` 条件？"
+        },
+        {
+            "role": "user",
+            "content": "是加在后面吗？`[x**2 for x in range(10) if x % 2 == 0]`？"
+        },
+        {
+            "role": "assistant",
+            "content": "你猜对了，试一下运行看看结果对不对？"
+        },
+        {
+            "role": "user",
+            "content": "运行出来了，`[0, 4, 16, 36, 64]`，是对的！原来条件过滤放在最后就行。"
+        },
+        {
+            "role": "assistant",
+            "content": "总结一下列表推导式的完整结构：\n```\n[表达式 for 变量 in 可迭代对象 if 条件]\n```\n\n最后一个问题：如果表达式部分需要根据条件返回不同的值（比如偶数保留原值，奇数变成 0），你觉得推导式该怎么写？先用普通 for 循环想一想。"
+        },
+        {
+            "role": "user",
+            "content": "普通循环的话：\n```python\nresult = []\nfor x in range(10):\n    if x % 2 == 0:\n        result.append(x)\n    else:\n        result.append(0)\n```\n推导式的话……是不是用三元表达式？`[x if x % 2 == 0 else 0 for x in range(10)]`？"
+        },
+        {
+            "role": "assistant",
+            "content": "几乎完美，只是表达式要放在 for 前面，你写的顺序是对的。运行一下确认结果吧。\n\n注意区分两种写法：\n- 过滤用 `if` 放后面：`[x for x in range(10) if x % 2 == 0]`\n- 条件赋值用 `if-else` 放前面：`[x if x % 2 == 0 else 0 for x in range(10)]`\n\n记住这个位置区别，以后用起来就不会混淆了。"
+        }
+    ],
+    "outcome": "success",
+    "key_teaching_moments": [
+        "student_mapped_comprehension_to_loop_structure",
+        "student_derived_conditional_filter_placement",
+        "student_inferred_ternary_expression_in_comprehension",
+        "student_distinguished_if_position_for_filtering_vs_conditional"
+    ]
+}
