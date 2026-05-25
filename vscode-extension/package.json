@@ -2,7 +2,7 @@
   "name": "pythonmentor",
   "displayName": "PythonMentor - Socratic Python Tutor",
   "description": "Personalized Python learning assistant with Socratic teaching method",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "Eddie-58-cgw",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -120,6 +120,21 @@
           "type": "string",
           "default": "qwen2.5:14b",
           "description": "Ollama 模型名"
+        },
+        "python-mentor.embeddingApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Embedding API Key (required for RAG, supports DashScope/OpenAI)"
+        },
+        "python-mentor.embeddingModel": {
+          "type": "string",
+          "default": "text-embedding-v4",
+          "description": "Embedding model name"
+        },
+        "python-mentor.embeddingApiUrl": {
+          "type": "string",
+          "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+          "description": "Embedding API base URL"
         }
       }
     }

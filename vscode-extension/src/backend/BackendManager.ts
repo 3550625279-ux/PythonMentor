@@ -42,7 +42,7 @@ export class BackendManager implements vscode.Disposable {
                 await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: 'PythonMentor' },
                     async (progress) => {
-                        progress.report({ message: 'Installing Python dependencies (first time)...' });
+                        progress.report({ message: 'Installing Python dependencies (may take 5-20 min on first run)...' });
                         await this.installDeps(pythonPath);
 
                         progress.report({ message: 'Writing configuration...' });
@@ -50,7 +50,7 @@ export class BackendManager implements vscode.Disposable {
 
                         const chromaPath = path.join(this.backendDir, 'chroma_db');
                         if (!fs.existsSync(chromaPath)) {
-                            progress.report({ message: 'Building knowledge index...' });
+                            progress.report({ message: 'Building knowledge index (first time)...' });
                             await this.buildIndex(pythonPath);
                         }
 
@@ -63,12 +63,23 @@ export class BackendManager implements vscode.Disposable {
                 this.spawnBackend(pythonPath);
             }
 
-            const ok = await this.waitForHealth(60_000);
-            if (ok) {
+            const ok = await this.waitForHealth(120_000);
+            if (!ok) {
+                // Auto-retry once
+                this.outputChannel.appendLine('Health check failed, retrying...');
+                this.stop();
+                await new Promise(r => setTimeout(r, 2000));
+                this.spawnBackend(pythonPath);
+                const ok2 = await this.waitForHealth(120_000);
+                if (ok2) {
+                    this.setStatus('running');
+                    this.startHealthMonitor();
+                } else {
+                    this.setStatus('error');
+                }
+            } else {
                 this.setStatus('running');
                 this.startHealthMonitor();
-            } else {
-                this.setStatus('error');
             }
         } catch (err: any) {
             this.outputChannel.appendLine(`Auto-start failed: ${err.message}`);
@@ -105,9 +116,9 @@ export class BackendManager implements vscode.Disposable {
                     this.spawnBackend(pythonPath);
 
                     progress.report({ message: 'Waiting for backend...' });
-                    const ok = await this.waitForHealth(60_000);
+                    const ok = await this.waitForHealth(120_000);
                     if (!ok) {
-                        throw new Error('Backend failed to start within 60 seconds. Check Output panel for details.');
+                        throw new Error('Backend failed to start within 120 seconds. Check Output panel for details.');
                     }
                 }
             );
@@ -181,13 +192,13 @@ export class BackendManager implements vscode.Disposable {
 
     private async installDeps(pythonPath: string): Promise<void> {
         const cmd = pythonPath.includes(' ')
-            ? `${pythonPath} -m pip install -e . --quiet`
-            : `"${pythonPath}" -m pip install -e . --quiet`;
+            ? `${pythonPath} -m pip install . --quiet`
+            : `"${pythonPath}" -m pip install . --quiet`;
 
         this.outputChannel.appendLine(`Running: ${cmd}`);
         const result = await execAsync(cmd, {
             cwd: this.backendDir,
-            timeout: 300_000,
+            timeout: 1_200_000,
         });
 
         if (result.exitCode !== 0) {
@@ -215,6 +226,11 @@ export class BackendManager implements vscode.Disposable {
             '# Ollama',
             `OLLAMA_URL=${config.get<string>('ollamaUrl', 'http://localhost:11434')}`,
             `OLLAMA_MODEL=${config.get<string>('ollamaModel', 'qwen2.5:14b')}`,
+            '',
+            '# Embedding API',
+            `EMBEDDING_API_KEY=${config.get<string>('embeddingApiKey', '')}`,
+            `EMBEDDING_API_MODEL=${config.get<string>('embeddingModel', 'text-embedding-v4')}`,
+            `EMBEDDING_API_URL=${config.get<string>('embeddingApiUrl', 'https://dashscope.aliyuncs.com/compatible-mode/v1')}`,
         ];
 
         const envPath = path.join(this.backendDir, '.env');
@@ -229,7 +245,7 @@ export class BackendManager implements vscode.Disposable {
         this.outputChannel.appendLine('Building RAG index...');
         const result = await execAsync(cmd, {
             cwd: this.backendDir,
-            timeout: 120_000,
+            timeout: 300_000,
         });
 
         if (result.exitCode !== 0) {
@@ -273,7 +289,17 @@ export class BackendManager implements vscode.Disposable {
 
         child.on('exit', (code, signal) => {
             this.outputChannel.appendLine(`Backend exited: code=${code}, signal=${signal}`);
-            if (this.status === 'running') {
+            if (this.status === 'starting' || this.status === 'running') {
+                vscode.window.showErrorMessage(
+                    `PythonMentor backend exited unexpectedly (code ${code}). Check Output panel for details.`,
+                    'Show Output', 'Retry'
+                ).then(choice => {
+                    if (choice === 'Show Output') {
+                        this.outputChannel.show();
+                    } else if (choice === 'Retry') {
+                        this.start();
+                    }
+                });
                 this.setStatus('error');
             }
             this.process = null;

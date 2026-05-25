@@ -12,7 +12,6 @@ def get_retriever() -> HybridRetriever:
     if _retriever is None:
         _retriever = HybridRetriever(
             db_path=settings.chroma_db_path,
-            model_name=settings.embedding_model,
             distance_threshold=settings.distance_threshold,
             api_key=settings.embedding_api_key,
             api_model=settings.embedding_api_model,

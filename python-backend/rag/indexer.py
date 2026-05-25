@@ -41,7 +41,6 @@ def build_index(
     api_model: str = "text-embedding-v4",
     api_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1",
     dimensions: int = 1024,
-    fallback_model: str = "all-MiniLM-L6-v2",
 ):
     """构建 RAG 知识库索引。
 
@@ -51,15 +50,14 @@ def build_index(
     Args:
         knowledge_base_dir: 知识库目录路径
         db_path: ChromaDB 持久化存储路径
-        api_key: DashScope API key（为空时 fallback 到本地模型）
-        api_model: DashScope 模型名
-        api_url: DashScope API 地址
+        api_key: Embedding API key（必需）
+        api_model: Embedding 模型名
+        api_url: Embedding API 地址
         dimensions: 嵌入维度
-        fallback_model: 本地 sentence-transformers 模型名
     """
     embedder = create_embedding_provider(
         api_key=api_key, model=api_model, base_url=api_url,
-        dimensions=dimensions, fallback_model=fallback_model,
+        dimensions=dimensions,
     )
 
     client = chromadb.PersistentClient(path=db_path)
@@ -208,5 +206,4 @@ if __name__ == "__main__":
         api_model=settings.embedding_api_model,
         api_url=settings.embedding_api_url,
         dimensions=settings.embedding_dimensions,
-        fallback_model=settings.embedding_model,
     )

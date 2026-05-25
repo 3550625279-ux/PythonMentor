@@ -45,6 +45,9 @@ The first launch automatically installs Python dependencies (about 1-2 minutes).
 | `python-mentor.pythonPath` | Python 解释器路径 / Python interpreter path | `python` |
 | `python-mentor.studentId` | 学生 ID / Student ID | `default` |
 | `python-mentor.backendUrl` | 后端服务地址 / Backend URL | `http://localhost:8000` |
+| `python-mentor.embeddingApiKey` | Embedding API Key（RAG 必需 / Required for RAG） | - |
+| `python-mentor.embeddingModel` | Embedding 模型名 / Embedding model | `text-embedding-v4` |
+| `python-mentor.embeddingApiUrl` | Embedding API 地址 / Embedding API URL | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
 
 ## Commands / 命令
 

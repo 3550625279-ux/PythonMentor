@@ -32,7 +32,6 @@ class HybridRetriever:
     def __init__(
         self,
         db_path: str,
-        model_name: str = "all-MiniLM-L6-v2",
         distance_threshold: float = 0.7,
         api_key: str = "",
         api_model: str = "text-embedding-v4",
@@ -43,16 +42,15 @@ class HybridRetriever:
 
         Args:
             db_path: ChromaDB 持久化存储路径
-            model_name: 本地 sentence-transformers 模型名（fallback）
             distance_threshold: 距离阈值，超过此值的结果将被过滤（cosine distance）
-            api_key: DashScope API key
-            api_model: DashScope 模型名
-            api_url: DashScope API 地址
+            api_key: Embedding API key（必需）
+            api_model: Embedding 模型名
+            api_url: Embedding API 地址
             dimensions: 嵌入维度
         """
         self.embedder = create_embedding_provider(
             api_key=api_key, model=api_model, base_url=api_url,
-            dimensions=dimensions, fallback_model=model_name,
+            dimensions=dimensions,
         )
         self.distance_threshold = distance_threshold
         client = chromadb.PersistentClient(path=db_path)

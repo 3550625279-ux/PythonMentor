@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2] - 2026-05-25
+
+### Fixed
+- Backend startup timeout: increased install timeout to 20 min, health check to 120s
+- Auto-retry backend startup once on health check failure
+- Backend crash now shows "Show Output / Retry" notification instead of silent failure
+
+### Changed
+- Removed sentence-transformers / torch dependency (~2GB) — embedding now requires API key
+- Added OpenAI-compatible embedding provider
+- Added VS Code settings for embedding API key, model, and URL
+- Changed pip install from editable mode (-e) to regular install
+
 ## [0.1.1] - 2026-05-25
 
 ### Fixed

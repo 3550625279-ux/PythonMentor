@@ -1,7 +1,7 @@
 """统一嵌入提供模块。
 
-支持阿里云 DashScope API 和本地 sentence-transformers。
-提供与 SentenceTransformer 兼容的 encode() 接口。
+支持阿里云 DashScope API 和 OpenAI 兼容 API。
+提供 encode() 接口用于生成文本嵌入向量。
 """
 
 import logging
@@ -70,15 +70,42 @@ class DashScopeEmbedding(EmbeddingProvider):
         return [item["embedding"] for item in items]
 
 
-class SentenceTransformerEmbedding(EmbeddingProvider):
-    """本地 sentence-transformers 模型（fallback）。"""
+class OpenAICompatibleEmbedding(EmbeddingProvider):
+    """OpenAI 兼容嵌入 API（支持 OpenAI、DeepSeek 等）。"""
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        from sentence_transformers import SentenceTransformer
-        self.model = SentenceTransformer(model_name)
+    def __init__(self, api_key: str, model: str = "text-embedding-3-small",
+                 base_url: str = "https://api.openai.com/v1"):
+        self.api_key = api_key
+        self.model = model
+        self.base_url = base_url.rstrip("/")
 
     def encode(self, texts: list[str]) -> list[list[float]]:
-        return self.model.encode(texts).tolist()
+        if not texts:
+            return []
+
+        all_embeddings = []
+        batch_size = 20
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            embeddings = self._call_api(batch)
+            all_embeddings.extend(embeddings)
+
+        return all_embeddings
+
+    def _call_api(self, texts: list[str]) -> list[list[float]]:
+        resp = httpx.post(
+            f"{self.base_url}/embeddings",
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            json={"model": self.model, "input": texts},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        items = sorted(data["data"], key=lambda x: x["index"])
+        return [item["embedding"] for item in items]
 
 
 def create_embedding_provider(
@@ -86,20 +113,27 @@ def create_embedding_provider(
     model: str = "text-embedding-v4",
     base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1",
     dimensions: int = 1024,
-    fallback_model: str = "all-MiniLM-L6-v2",
 ) -> EmbeddingProvider:
     """根据配置创建嵌入提供者。
 
-    有 API key 时用 DashScope，否则 fallback 到本地模型。
+    必须提供 API key，否则抛出 ValueError。
+    根据 base_url 自动选择 DashScope 或 OpenAI 兼容模式。
     """
-    if api_key:
-        logger.info("使用 DashScope 嵌入模型: %s (dim=%d)", model, dimensions)
+    if not api_key:
+        raise ValueError(
+            "Embedding API key is required. "
+            "Set 'python-mentor.embeddingApiKey' in VS Code settings, "
+            "or set EMBEDDING_API_KEY in .env."
+        )
+
+    if "dashscope" in base_url:
+        logger.info("Using DashScope embedding: %s (dim=%d)", model, dimensions)
         return DashScopeEmbedding(
-            api_key=api_key,
-            model=model,
-            base_url=base_url,
-            dimensions=dimensions,
+            api_key=api_key, model=model,
+            base_url=base_url, dimensions=dimensions,
         )
     else:
-        logger.info("未配置嵌入 API key，使用本地模型: %s", fallback_model)
-        return SentenceTransformerEmbedding(fallback_model)
+        logger.info("Using OpenAI-compatible embedding: %s", model)
+        return OpenAICompatibleEmbedding(
+            api_key=api_key, model=model, base_url=base_url,
+        )
