@@ -2,7 +2,7 @@
   "name": "pythonmentor",
   "displayName": "PythonMentor - Socratic Python Tutor",
   "description": "Personalized Python learning assistant with Socratic teaching method",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "Eddie-58-cgw",
   "author": "Eddie",
   "license": "MIT",
@@ -20,7 +20,8 @@
     "onCommand:python-mentor.diagnoseError",
     "onCommand:python-mentor.startBackend",
     "onCommand:python-mentor.stopBackend",
-    "onCommand:python-mentor.configureApiKeys"
+    "onCommand:python-mentor.configureApiKeys",
+    "onCommand:python-mentor.reconfigure"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -67,6 +68,11 @@
         "command": "python-mentor.configureApiKeys",
         "title": "PythonMentor: Configure API Keys",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "python-mentor.reconfigure",
+        "title": "PythonMentor: Re-run Setup Wizard",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -84,106 +90,106 @@
         "python-mentor.backendUrl": {
           "type": "string",
           "default": "http://localhost:8000",
-          "description": "Python 后端服务地址"
+          "description": "Backend service URL / Python 后端服务地址"
         },
         "python-mentor.studentId": {
           "type": "string",
           "default": "default",
-          "description": "学生 ID，用于区分不同学生的学习档案"
+          "description": "Student ID for profile tracking / 学生 ID，用于区分不同学生的学习档案"
         },
         "python-mentor.pythonPath": {
           "type": "string",
           "default": "python",
-          "description": "Python 解释器路径（留空则自动检测）"
+          "description": "Python interpreter path (auto-detect if empty) / Python 解释器路径（留空则自动检测）"
         },
         "python-mentor.llmBackend": {
           "type": "string",
           "enum": ["ollama", "claude", "openai"],
           "default": "ollama",
-          "description": "LLM 后端选择"
+          "description": "LLM backend provider / LLM 后端选择"
         },
         "python-mentor.claudeApiKey": {
           "type": "string",
           "default": "",
-          "description": "Claude API Key (or Anthropic-compatible service key)"
+          "description": "Claude API Key (Anthropic-compatible) / Claude API 密钥"
         },
         "python-mentor.claudeBaseUrl": {
           "type": "string",
           "default": "",
-          "description": "Anthropic-compatible API base URL (leave empty for official Anthropic)"
+          "description": "Anthropic-compatible API base URL (empty = official) / Anthropic 兼容 API 地址（留空使用官方）"
         },
         "python-mentor.claudeModel": {
           "type": "string",
           "default": "claude-sonnet-4-20250514",
-          "description": "Claude model name"
+          "description": "Claude model name / Claude 模型名"
         },
         "python-mentor.openaiApiKey": {
           "type": "string",
           "default": "",
-          "description": "OpenAI API Key (or OpenAI-compatible service key)"
+          "description": "OpenAI API Key (or OpenAI-compatible) / OpenAI API 密钥"
         },
         "python-mentor.openaiBaseUrl": {
           "type": "string",
           "default": "",
-          "description": "OpenAI-compatible API base URL (e.g. DeepSeek, Xiaomi, etc. Leave empty for official OpenAI)"
+          "description": "OpenAI-compatible base URL (DeepSeek, etc. Empty = official) / OpenAI 兼容 API 地址"
         },
         "python-mentor.openaiModel": {
           "type": "string",
           "default": "gpt-4o",
-          "description": "OpenAI model name (e.g. gpt-4o, deepseek-chat, etc.)"
+          "description": "OpenAI model name (e.g. gpt-4o, deepseek-chat) / OpenAI 模型名"
         },
         "python-mentor.ollamaUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "Ollama 服务地址"
+          "description": "Ollama service URL / Ollama 服务地址"
         },
         "python-mentor.ollamaModel": {
           "type": "string",
           "default": "qwen2.5:14b",
-          "description": "Ollama 模型名"
+          "description": "Ollama model name / Ollama 模型名"
         },
         "python-mentor.embeddingApiKey": {
           "type": "string",
           "default": "",
-          "description": "Embedding API Key (required for RAG, supports DashScope/OpenAI)"
+          "description": "Embedding API Key (required for RAG) / 嵌入 API 密钥（RAG 必需）"
         },
         "python-mentor.embeddingModel": {
           "type": "string",
           "default": "text-embedding-v4",
-          "description": "Embedding model name"
+          "description": "Embedding model name / 嵌入模型名"
         },
         "python-mentor.embeddingApiUrl": {
           "type": "string",
           "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Embedding API base URL"
+          "description": "Embedding API base URL / 嵌入 API 地址"
         },
         "python-mentor.maxTokens": {
           "type": "integer",
           "default": 2048,
           "minimum": 256,
           "maximum": 16384,
-          "description": "LLM 单次回复最大 token 数（输出长度上限）"
+          "description": "Max tokens per LLM response / 单次回复最大 token 数"
         },
         "python-mentor.temperature": {
           "type": "number",
           "default": 0.7,
           "minimum": 0.0,
           "maximum": 2.0,
-          "description": "LLM 温度参数：越低越确定（0.0），越高越随机（2.0）"
+          "description": "LLM temperature: lower = more deterministic / 温度参数：越低越确定"
         },
         "python-mentor.topP": {
           "type": "number",
           "default": 1.0,
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Top-P 采样参数：控制词汇多样性，1.0 表示不启用"
+          "description": "Top-P sampling (1.0 = disabled) / Top-P 采样参数"
         },
         "python-mentor.contextWindow": {
           "type": "integer",
           "default": 40,
           "minimum": 5,
           "maximum": 100,
-          "description": "发送给 LLM 的最近对话轮数（影响输入 token 消耗）"
+          "description": "Recent conversation turns sent to LLM / 发送给 LLM 的最近对话轮数"
         }
       }
     }

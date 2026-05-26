@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ChildProcess, execFile, spawn } from 'child_process';
-import { findPython, execAsync } from './PythonDetector';
+import { findPython, execAsync, parseCommand } from './PythonDetector';
 
 type BackendStatus = 'stopped' | 'starting' | 'running' | 'error';
 
@@ -15,7 +15,14 @@ export class BackendManager implements vscode.Disposable {
     private outputChannel: vscode.OutputChannel;
 
     constructor(private context: vscode.ExtensionContext) {
-        this.backendDir = path.join(context.extensionPath, 'python-backend');
+        // Production: python-backend is bundled inside the extension
+        // Development: python-backend lives at the project root (one level up from vscode-extension/)
+        const bundledDir = path.join(context.extensionPath, 'python-backend');
+        if (fs.existsSync(bundledDir)) {
+            this.backendDir = bundledDir;
+        } else {
+            this.backendDir = path.join(context.extensionPath, '..', 'python-backend');
+        }
         this.outputChannel = vscode.window.createOutputChannel('PythonMentor Backend');
 
         this.statusBarItem = vscode.window.createStatusBarItem(
@@ -35,29 +42,34 @@ export class BackendManager implements vscode.Disposable {
             const config = vscode.workspace.getConfiguration('python-mentor');
             const userPath = config.get<string>('pythonPath', 'python');
 
-            const pythonPath = await findPython(userPath);
-            const depsInstalled = await this.checkDepsInstalled(pythonPath);
+            // 1. Find system Python
+            const systemPython = await findPython(userPath);
 
+            // 2. Ensure venv exists
+            const venvPython = await this.ensureVenv(systemPython);
+
+            // 3. Check and install deps in venv
+            const depsInstalled = await this.checkDepsInstalled(venvPython);
             if (!depsInstalled) {
                 await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: 'PythonMentor' },
                     async (progress) => {
-                        progress.report({ message: 'Installing Python dependencies (may take 5-20 min on first run)...' });
-                        await this.installDeps(pythonPath);
+                        progress.report({ message: 'Creating virtual environment and installing dependencies (may take 5-20 min on first run)...' });
+                        await this.installDeps(venvPython);
 
                         progress.report({ message: 'Writing configuration...' });
                         this.writeEnvFile();
 
                         progress.report({ message: 'Starting backend...' });
-                        this.spawnBackend(pythonPath);
+                        await this.spawnBackend(venvPython);
                     }
                 );
             } else {
                 this.writeEnvFile();
-                this.spawnBackend(pythonPath);
+                await this.spawnBackend(venvPython);
             }
 
-            // Always check and build index if needed (outside the deps block)
+            // 4. Build RAG index if needed
             const chromaPath = path.join(this.backendDir, 'chroma_db');
             let needsIndex = true;
             try {
@@ -70,16 +82,17 @@ export class BackendManager implements vscode.Disposable {
             }
             if (needsIndex) {
                 this.outputChannel.appendLine('Building RAG knowledge index...');
-                await this.buildIndex(pythonPath);
+                await this.buildIndex(venvPython);
             }
 
+            // 5. Health check
             const ok = await this.waitForHealth(120_000);
             if (!ok) {
                 // Auto-retry once
                 this.outputChannel.appendLine('Health check failed, retrying...');
                 this.stop();
                 await new Promise(r => setTimeout(r, 2000));
-                this.spawnBackend(pythonPath);
+                await this.spawnBackend(venvPython);
                 const ok2 = await this.waitForHealth(120_000);
                 if (ok2) {
                     this.setStatus('running');
@@ -133,7 +146,7 @@ export class BackendManager implements vscode.Disposable {
                     const pythonPath = await this.prepareEnvironment();
 
                     progress.report({ message: 'Starting backend server...' });
-                    this.spawnBackend(pythonPath);
+                    await this.spawnBackend(pythonPath);
 
                     progress.report({ message: 'Waiting for backend...' });
                     const ok = await this.waitForHealth(120_000);
@@ -176,15 +189,64 @@ export class BackendManager implements vscode.Disposable {
 
     // --- Internal ---
 
+    /** Get the venv Python path for the current platform. */
+    private getVenvPython(): string {
+        if (process.platform === 'win32') {
+            return path.join(this.backendDir, '.venv', 'Scripts', 'python.exe');
+        }
+        return path.join(this.backendDir, '.venv', 'bin', 'python');
+    }
+
+    /**
+     * Ensure a venv exists in python-backend/.venv.
+     * Returns the path to the venv Python interpreter.
+     */
+    private async ensureVenv(systemPython: string): Promise<string> {
+        const venvPython = this.getVenvPython();
+
+        if (fs.existsSync(venvPython)) {
+            this.outputChannel.appendLine(`Using existing venv: ${venvPython}`);
+            return venvPython;
+        }
+
+        this.outputChannel.appendLine(`Creating venv at ${path.join(this.backendDir, '.venv')}...`);
+
+        const cmd = systemPython.includes(' ')
+            ? `"${systemPython}" -m venv .venv`
+            : `${systemPython} -m venv .venv`;
+
+        const result = await execAsync(cmd, {
+            cwd: this.backendDir,
+            timeout: 120_000,
+        });
+
+        if (result.exitCode !== 0) {
+            this.outputChannel.appendLine(`Venv creation failed: ${result.stderr}`);
+            throw new Error(
+                'Failed to create Python virtual environment. ' +
+                'Ensure Python 3.10+ is installed and the venv module is available.'
+            );
+        }
+
+        this.outputChannel.appendLine('Venv created successfully.');
+        return venvPython;
+    }
+
+    /**
+     * Full environment preparation: find system Python → ensure venv → install deps → write .env → build index.
+     * Returns the venv Python path.
+     */
     private async prepareEnvironment(): Promise<string> {
         const config = vscode.workspace.getConfiguration('python-mentor');
         const userPath = config.get<string>('pythonPath', 'python');
-        const pythonPath = await findPython(userPath);
+        const systemPython = await findPython(userPath);
 
-        const depsInstalled = await this.checkDepsInstalled(pythonPath);
+        const venvPython = await this.ensureVenv(systemPython);
+
+        const depsInstalled = await this.checkDepsInstalled(venvPython);
         if (!depsInstalled) {
-            this.outputChannel.appendLine('Installing backend dependencies...');
-            await this.installDeps(pythonPath);
+            this.outputChannel.appendLine('Installing backend dependencies into venv...');
+            await this.installDeps(venvPython);
         }
 
         this.writeEnvFile();
@@ -201,17 +263,17 @@ export class BackendManager implements vscode.Disposable {
         }
         if (needsIndex) {
             this.outputChannel.appendLine('Building RAG knowledge index...');
-            await this.buildIndex(pythonPath);
+            await this.buildIndex(venvPython);
         }
 
-        return pythonPath;
+        return venvPython;
     }
 
     private async checkDepsInstalled(pythonPath: string): Promise<boolean> {
         try {
             const cmd = pythonPath.includes(' ')
-                ? `"${pythonPath}" -c "import fastapi"`
-                : `${pythonPath} -c "import fastapi"`;
+                ? `"${pythonPath}" -c "import fastapi; import uvicorn; import chromadb"`
+                : `${pythonPath} -c "import fastapi; import uvicorn; import chromadb"`;
             const result = await execAsync(cmd, { cwd: this.backendDir, timeout: 10_000 });
             return result.exitCode === 0;
         } catch {
@@ -220,6 +282,7 @@ export class BackendManager implements vscode.Disposable {
     }
 
     private async installDeps(pythonPath: string): Promise<void> {
+        // Use python -m pip to ensure we use the venv's pip, not a system pip
         const cmd = pythonPath.includes(' ')
             ? `"${pythonPath}" -m pip install . --quiet`
             : `${pythonPath} -m pip install . --quiet`;
@@ -292,8 +355,48 @@ export class BackendManager implements vscode.Disposable {
         }
     }
 
+    /** Kill any process occupying the backend port. */
+    private async killPortOccupant(): Promise<void> {
+        const config = vscode.workspace.getConfiguration('python-mentor');
+        const backendUrl = config.get<string>('backendUrl', 'http://localhost:8000');
+        const url = new URL(backendUrl);
+        const port = url.port || '8000';
+
+        try {
+            const { execSync } = require('child_process');
+            if (process.platform === 'win32') {
+                const output = execSync(`netstat -ano | findstr ":${port} " | findstr "LISTENING"`, {
+                    encoding: 'utf-8', timeout: 5000,
+                }).trim();
+                if (output) {
+                    const match = output.match(/\s(\d+)\s*$/);
+                    if (match) {
+                        const pid = match[1];
+                        this.outputChannel.appendLine(`Port ${port} occupied by PID ${pid}, killing...`);
+                        execSync(`taskkill /F /PID ${pid}`, { timeout: 5000 });
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+                }
+            } else {
+                // Unix: lsof -ti :PORT | xargs kill -9
+                try {
+                    const pid = execSync(`lsof -ti :${port}`, { encoding: 'utf-8', timeout: 5000 }).trim();
+                    if (pid) {
+                        this.outputChannel.appendLine(`Port ${port} occupied by PID ${pid}, killing...`);
+                        execSync(`kill -9 ${pid}`, { timeout: 5000 });
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+                } catch {
+                    // No process on port
+                }
+            }
+        } catch {
+            // No process on port or kill failed — proceed and let spawn fail with clear error
+        }
+    }
+
     /** Start backend as a child process (more reliable than terminal). */
-    private spawnBackend(pythonPath: string): void {
+    private async spawnBackend(pythonPath: string): Promise<void> {
         if (this.process) {
             this.process.kill();
             this.process = null;
@@ -303,11 +406,26 @@ export class BackendManager implements vscode.Disposable {
         this.outputChannel.appendLine(`Starting backend: ${pythonPath} "${mainPy}"`);
         this.outputChannel.appendLine(`Backend dir: ${this.backendDir}`);
 
+        // Pre-flight checks
+        if (!fs.existsSync(this.backendDir)) {
+            throw new Error(`Backend directory not found: ${this.backendDir}. The extension may be corrupted — try reinstalling.`);
+        }
+        if (!fs.existsSync(mainPy)) {
+            throw new Error(`Backend main.py not found at: ${mainPy}. The extension may be corrupted — try reinstalling.`);
+        }
+
+        // Kill any leftover process on the backend port
+        await this.killPortOccupant();
+
         // 直接 spawn Python，不用 shell（避免 cmd.exe ENOENT 问题）
         // py -3 需要拆分为 executable + args
-        const [rawExe, ...extraArgs] = pythonPath.split(/\s+/);
+        const { exe: rawExe, args: extraArgs } = parseCommand(pythonPath);
         // 规范化路径：resolve 处理相对路径和 ..，normalize 处理 Unicode
         const exe = path.resolve(rawExe);
+
+        if (!fs.existsSync(exe)) {
+            throw new Error(`Python executable not found: ${exe}. Check "python-mentor.pythonPath" setting or reinstall your Python environment.`);
+        }
         this.outputChannel.appendLine(`Resolved exe: ${exe}`);
 
         this.outputChannel.appendLine(`[diag] rawExe="${rawExe}" exe="${exe}"`);

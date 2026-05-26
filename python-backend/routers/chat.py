@@ -116,30 +116,27 @@ async def chat(request: ChatRequest):
         )
         evaluator.apply_evaluation(profile, eval_result)
 
-    # ── 7. RAG 检索 ──
+    # ── 7. RAG 检索（优雅降级：不可用时跳过）──
     error_diagnosis = ErrorDiagnosis()
     error = None
     if mode == "diagnosis":
         error = error_diagnosis.parse_traceback(ctx.get("error_info", ""))
 
-    try:
-        retriever = get_retriever()
-        rag_results = await asyncio.to_thread(
-            retriever.retrieve,
-            query=request.message,
-            top_k=3,
-            error_type=error.error_type if error else None,
-        )
-    except ValueError as e:
-        # Embedding API key missing — return clear error via SSE
-        return StreamingResponse(
-            iter([f"data: {json.dumps({'token': f'RAG 配置错误: {e}'}, ensure_ascii=False)}\n\n",
-                  f"data: {json.dumps({'done': True})}\n\n"]),
-            media_type="text/event-stream",
-        )
-    except Exception as e:
-        logger.warning("RAG 检索失败，跳过: %s", e)
-        rag_results = []
+    rag_results = []
+    retriever = get_retriever()
+    if retriever is None:
+        logger.info("RAG 不可用，使用基础对话模式")
+    else:
+        try:
+            rag_results = await asyncio.to_thread(
+                retriever.retrieve,
+                query=request.message,
+                top_k=3,
+                error_type=error.error_type if error else None,
+            )
+        except Exception as e:
+            logger.warning("RAG 检索失败，跳过: %s", e)
+            rag_results = []
 
     # ── 8. 构建 system prompt（四层拼装）──
     if quick_emotion == "RED":
@@ -182,6 +179,9 @@ async def chat(request: ChatRequest):
     async def generate():
         yield f"data: {json.dumps({'status': 'thinking'}, ensure_ascii=False)}\n\n"
 
+        if retriever is None:
+            yield f"data: {json.dumps({'status': 'RAG 不可用，使用基础对话模式'}, ensure_ascii=False)}\n\n"
+
         full_reply = ""
         try:
             async for token in provider.chat_stream(messages=messages, system=system):
@@ -191,7 +191,10 @@ async def chat(request: ChatRequest):
             logger.error("LLM 流式调用失败: %s", e)
             if not full_reply:
                 error_msg = str(e)
-                if "connect" in error_msg.lower() or "connection" in error_msg.lower():
+                if "401" in error_msg or "403" in error_msg or "auth" in error_msg.lower():
+                    hint = f"API 认证失败 ({settings.llm_backend})。请检查 API Key 是否正确。\n"
+                    hint += "Use 'PythonMentor: Configure API Keys' to update."
+                elif "connect" in error_msg.lower() or "connection" in error_msg.lower():
                     hint = f"无法连接到 LLM 服务 ({settings.llm_backend})。请检查：\n"
                     if settings.llm_backend == "ollama":
                         hint += "1. Ollama 是否已启动（运行 `ollama serve`）\n"

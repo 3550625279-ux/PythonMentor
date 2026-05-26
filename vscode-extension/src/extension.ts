@@ -3,11 +3,12 @@ import { SidebarChatProvider } from './webview/SidebarChatProvider';
 import { ErrorWatcher } from './diagnostics/ErrorWatcher';
 import { BackendClient } from './backend/BackendClient';
 import { BackendManager } from './backend/BackendManager';
+import { isConfigured, runSetupWizard, resetConfigured } from './setup/SetupWizard';
 
 let backendManager: BackendManager;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('PythonMentor 已激活');
+    console.log('PythonMentor activated');
 
     const backend = new BackendClient();
     backendManager = new BackendManager(context);
@@ -60,12 +61,39 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Re-run setup wizard command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('python-mentor.reconfigure', async () => {
+            await resetConfigured(context);
+            const ok = await runSetupWizard(context);
+            if (ok) {
+                backendManager.autoStart();
+            }
+        })
+    );
+
     const errorWatcher = new ErrorWatcher(sidebarProvider);
     context.subscriptions.push(errorWatcher);
     context.subscriptions.push(backendManager);
 
-    // Auto-start backend (non-blocking)
-    backendManager.autoStart();
+    // First-run wizard + auto-start
+    (async () => {
+        try {
+            if (!isConfigured(context)) {
+                const completed = await runSetupWizard(context);
+                if (!completed) {
+                    // User cancelled — don't auto-start.
+                    // They can retry by opening sidebar (which re-triggers activation)
+                    // or via the reconfigure command.
+                    return;
+                }
+            }
+            backendManager.autoStart();
+        } catch (err) {
+            console.error('PythonMentor activation error:', err);
+            vscode.window.showErrorMessage(`PythonMentor activation failed: ${err}`);
+        }
+    })();
 }
 
 export function deactivate() {

@@ -77,7 +77,7 @@ async function getVersion(cmd: string): Promise<string | null> {
 }
 
 /** 将命令字符串拆分为 executable + args（处理带引号的路径）。 */
-function parseCommand(command: string): { exe: string; args: string[] } {
+export function parseCommand(command: string): { exe: string; args: string[] } {
     const parts: string[] = [];
     let current = '';
     let inQuote = false;
