@@ -50,7 +50,7 @@ EVAL_EVERY_N = 3
 class ChatRequest(BaseModel):
     message: str
     student_id: str = "default"
-    context: dict = {}
+    context: dict | None = None
     mode: str = "auto"
 
 
@@ -58,7 +58,14 @@ class ChatRequest(BaseModel):
 async def chat(request: ChatRequest):
     """主对话端点。流水线：SessionManager → 快速预筛 → RAG → 按需评估 → 教学回复。"""
 
-    provider = get_provider()
+    try:
+        provider = get_provider()
+    except ValueError as e:
+        return StreamingResponse(
+            iter([f"data: {json.dumps({'token': f'LLM 配置错误: {e}'}, ensure_ascii=False)}\n\n",
+                  f"data: {json.dumps({'done': True})}\n\n"]),
+            media_type="text/event-stream",
+        )
 
     # ── 1. 获取或创建会话 ──
     session = session_manager.get_or_create_session(request.student_id)
@@ -76,10 +83,11 @@ async def chat(request: ChatRequest):
     quick_emotion = EmotionDetector().quick_check(request.message)
 
     # ── 5. 确定教学模式 ──
+    ctx = request.context or {}
     if request.mode == "auto":
-        if request.context.get("error_info"):
+        if ctx.get("error_info"):
             mode = "diagnosis"
-        elif request.context.get("request_explain"):
+        elif ctx.get("request_explain"):
             mode = "explain"
         else:
             mode = "socratic"
@@ -96,10 +104,10 @@ async def chat(request: ChatRequest):
     if should_evaluate:
         evaluator = StateEvaluator(provider)
         eval_context = ""
-        if request.context.get("error_info"):
-            eval_context = f"学生遇到了错误:\n{request.context['error_info']}"
-        if request.context.get("code"):
-            eval_context += f"\n学生当前代码:\n{request.context['code']}"
+        if ctx.get("error_info"):
+            eval_context = f"学生遇到了错误:\n{ctx['error_info']}"
+        if ctx.get("code"):
+            eval_context += f"\n学生当前代码:\n{ctx['code']}"
 
         eval_result = await evaluator.evaluate(
             profile=profile,
@@ -112,23 +120,28 @@ async def chat(request: ChatRequest):
     error_diagnosis = ErrorDiagnosis()
     error = None
     if mode == "diagnosis":
-        error = error_diagnosis.parse_traceback(request.context.get("error_info", ""))
+        error = error_diagnosis.parse_traceback(ctx.get("error_info", ""))
 
-    retriever = get_retriever()
     try:
+        retriever = get_retriever()
         rag_results = await asyncio.to_thread(
             retriever.retrieve,
             query=request.message,
             top_k=3,
             error_type=error.error_type if error else None,
         )
+    except ValueError as e:
+        # Embedding API key missing — return clear error via SSE
+        return StreamingResponse(
+            iter([f"data: {json.dumps({'token': f'RAG 配置错误: {e}'}, ensure_ascii=False)}\n\n",
+                  f"data: {json.dumps({'done': True})}\n\n"]),
+            media_type="text/event-stream",
+        )
     except Exception as e:
         logger.warning("RAG 检索失败，跳过: %s", e)
         rag_results = []
 
     # ── 8. 构建 system prompt（四层拼装）──
-    state_description = profile.get_state_description()
-
     if quick_emotion == "RED":
         # 情绪 RED 时强制覆盖状态
         profile.current_emotion = EmotionLevel.RED
@@ -139,16 +152,16 @@ async def chat(request: ChatRequest):
         )
     elif mode == "diagnosis":
         error_info = (
-            error_diagnosis.build_diagnosis_context(error, request.context.get("code", ""))
+            error_diagnosis.build_diagnosis_context(error, ctx.get("code", ""))
             if error
-            else request.context.get("error_info", "")
+            else ctx.get("error_info", "")
         )
         system = build_system_prompt(
             mode="diagnosis",
             student_profile=profile,
             rag_chunks=rag_results,
             error_info=error_info,
-            code_context=request.context.get("code", ""),
+            code_context=ctx.get("code", ""),
         )
     elif mode == "explain":
         system = build_system_prompt(
@@ -164,7 +177,7 @@ async def chat(request: ChatRequest):
         )
 
     # ── 9. 从 Session 获取对话历史，流式调用 LLM ──
-    messages = session.get_recent_messages(n=40)
+    messages = session.get_recent_messages(n=settings.context_window)
 
     async def generate():
         yield f"data: {json.dumps({'status': 'thinking'}, ensure_ascii=False)}\n\n"
@@ -177,7 +190,19 @@ async def chat(request: ChatRequest):
         except Exception as e:
             logger.error("LLM 流式调用失败: %s", e)
             if not full_reply:
-                yield f"data: {json.dumps({'token': '抱歉，AI 服务暂时不可用，请稍后重试。'}, ensure_ascii=False)}\n\n"
+                error_msg = str(e)
+                if "connect" in error_msg.lower() or "connection" in error_msg.lower():
+                    hint = f"无法连接到 LLM 服务 ({settings.llm_backend})。请检查：\n"
+                    if settings.llm_backend == "ollama":
+                        hint += "1. Ollama 是否已启动（运行 `ollama serve`）\n"
+                        hint += f"2. 服务地址是否正确：{settings.ollama_url}"
+                    elif settings.llm_backend == "claude":
+                        hint += "1. Claude API Key 是否已配置\n2. 网络是否可访问 Anthropic API"
+                    elif settings.llm_backend == "openai":
+                        hint += "1. OpenAI API Key 是否已配置\n2. 网络是否可访问 OpenAI API"
+                else:
+                    hint = f"AI 服务错误: {error_msg}"
+                yield f"data: {json.dumps({'token': hint}, ensure_ascii=False)}\n\n"
         finally:
             # 无论成功失败，都保存已有对话（保护性写入，不阻断 done 信号）
             try:
@@ -216,7 +241,10 @@ class EndSessionRequest(BaseModel):
 @router.post("/chat/end")
 async def end_session(request: EndSessionRequest):
     """结束会话：提取摘要 → 写入历史 collection → 更新画像 → 清除内存会话。"""
-    provider = get_provider()
+    try:
+        provider = get_provider()
+    except ValueError as e:
+        return {"status": "error", "student_id": request.student_id, "message": f"LLM 配置错误: {e}"}
 
     # 1. 取出活跃会话（不立即删除，等摘要完成后再删）
     session = session_manager.get_active_session(request.student_id)
@@ -231,7 +259,6 @@ async def end_session(request: EndSessionRequest):
     try:
         history_indexer = HistoryIndexer(
             db_path=settings.chroma_db_path,
-            model_name=settings.embedding_model,
             api_key=settings.embedding_api_key,
             api_model=settings.embedding_api_model,
             api_url=settings.embedding_api_url,

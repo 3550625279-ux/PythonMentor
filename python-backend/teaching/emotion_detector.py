@@ -3,10 +3,15 @@
 class EmotionDetector:
     """快速情绪预筛（仅用于 LLM 评估前的粗略判断）。"""
 
-    RED_SIGNALS = ["算了", "放弃", "不学了", "give up", "whatever"]
+    RED_SIGNALS = [
+        "算了", "放弃", "不学了", "give up", "whatever",
+        "不想学", "学不会", "太难了", "我不行", "quit",
+        "i can't", "i'm done", "forget it", "never mind",
+    ]
 
     def quick_check(self, message: str) -> str | None:
         """只检测严重情绪（RED），其他交给 LLM 评估。"""
-        if any(s in message for s in self.RED_SIGNALS):
+        lower = message.lower()
+        if any(s in lower for s in self.RED_SIGNALS):
             return "RED"
         return None  # 其他情绪由 LLM 评估

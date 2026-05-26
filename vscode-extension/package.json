@@ -2,8 +2,9 @@
   "name": "pythonmentor",
   "displayName": "PythonMentor - Socratic Python Tutor",
   "description": "Personalized Python learning assistant with Socratic teaching method",
-  "version": "0.1.2",
+  "version": "0.1.6",
   "publisher": "Eddie-58-cgw",
+  "author": "Eddie",
   "license": "MIT",
   "icon": "images/icon.png",
   "keywords": ["python", "education", "tutor", "socratic", "learning", "AI"],
@@ -104,12 +105,32 @@
         "python-mentor.claudeApiKey": {
           "type": "string",
           "default": "",
-          "description": "Claude API Key"
+          "description": "Claude API Key (or Anthropic-compatible service key)"
+        },
+        "python-mentor.claudeBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic-compatible API base URL (leave empty for official Anthropic)"
+        },
+        "python-mentor.claudeModel": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Claude model name"
         },
         "python-mentor.openaiApiKey": {
           "type": "string",
           "default": "",
-          "description": "OpenAI API Key"
+          "description": "OpenAI API Key (or OpenAI-compatible service key)"
+        },
+        "python-mentor.openaiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI-compatible API base URL (e.g. DeepSeek, Xiaomi, etc. Leave empty for official OpenAI)"
+        },
+        "python-mentor.openaiModel": {
+          "type": "string",
+          "default": "gpt-4o",
+          "description": "OpenAI model name (e.g. gpt-4o, deepseek-chat, etc.)"
         },
         "python-mentor.ollamaUrl": {
           "type": "string",
@@ -135,6 +156,34 @@
           "type": "string",
           "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
           "description": "Embedding API base URL"
+        },
+        "python-mentor.maxTokens": {
+          "type": "integer",
+          "default": 2048,
+          "minimum": 256,
+          "maximum": 16384,
+          "description": "LLM 单次回复最大 token 数（输出长度上限）"
+        },
+        "python-mentor.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "description": "LLM 温度参数：越低越确定（0.0），越高越随机（2.0）"
+        },
+        "python-mentor.topP": {
+          "type": "number",
+          "default": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Top-P 采样参数：控制词汇多样性，1.0 表示不启用"
+        },
+        "python-mentor.contextWindow": {
+          "type": "integer",
+          "default": 40,
+          "minimum": 5,
+          "maximum": 100,
+          "description": "发送给 LLM 的最近对话轮数（影响输入 token 消耗）"
         }
       }
     }
@@ -145,8 +194,8 @@
     "watch": "webpack --watch --mode development",
     "copy-deps": "node scripts/copy-backend.js",
     "clean-deps": "node scripts/clean-backend.js",
-    "package": "npm run build && npm run copy-deps && vsce package && npm run clean-deps",
-    "publish": "npm run build && npm run copy-deps && vsce publish && npm run clean-deps"
+    "package": "npm run build && npm run copy-deps && vsce package --allow-missing-repository && npm run clean-deps",
+    "publish": "npm run build && npm run copy-deps && vsce publish --allow-missing-repository && npm run clean-deps"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",

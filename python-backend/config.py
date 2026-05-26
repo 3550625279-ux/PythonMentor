@@ -16,6 +16,7 @@ class Settings:
 
     # OpenAI 配置
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    openai_base_url: str = os.getenv("OPENAI_BASE_URL", "")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o")
 
     # Ollama 配置
@@ -28,7 +29,6 @@ class Settings:
     dev_mode: bool = os.getenv("DEV_MODE", "false").lower() == "true"
 
     # RAG 配置
-    embedding_model: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     chroma_db_path: str = os.getenv("CHROMA_DB_PATH", "./chroma_db")
     distance_threshold: float = float(os.getenv("DISTANCE_THRESHOLD", "0.7"))
     rag_top_k: int = int(os.getenv("RAG_TOP_K", "3"))
@@ -42,5 +42,11 @@ class Settings:
     # 批评模型配置
     critique_enabled: bool = os.getenv("CRITIQUE_ENABLED", "false").lower() == "true"
     critique_model: str = os.getenv("CRITIQUE_MODEL", "")
+
+    # LLM 调用参数（用户可调）
+    max_tokens: int = int(os.getenv("MAX_TOKENS", "2048"))
+    temperature: float = float(os.getenv("TEMPERATURE", "0.7"))
+    top_p: float = float(os.getenv("TOP_P", "1.0"))
+    context_window: int = int(os.getenv("CONTEXT_WINDOW", "40"))
 
 settings = Settings()

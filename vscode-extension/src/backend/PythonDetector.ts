@@ -1,4 +1,6 @@
-import { exec } from 'child_process';
+import { execFile, spawn } from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 
 /**
@@ -54,16 +56,11 @@ export async function findPython(userPath?: string): Promise<string> {
 /** Get Python version string, or null if command fails or version < 3.10. */
 async function getVersion(cmd: string): Promise<string | null> {
     return new Promise((resolve) => {
-        const proc = cmd.includes(' ')
-            ? exec(cmd + ' --version', { timeout: 5000 })
-            : exec(`"${cmd}" --version`, { timeout: 5000 });
+        const { exe: rawExe, args } = parseCommand(cmd);
+        const exe = path.isAbsolute(rawExe) ? path.normalize(rawExe) : rawExe;
 
-        let stdout = '';
-        let stderr = '';
-        proc.stdout?.on('data', (d: string) => (stdout += d));
-        proc.stderr?.on('data', (d: string) => (stderr += d));
-
-        proc.on('close', (code) => {
+        execFile(exe, [...args, '--version'], { timeout: 5000 }, (error, stdout, stderr) => {
+            if (error) { resolve(null); return; }
             const output = (stdout + stderr).trim();
             const match = output.match(/Python (\d+)\.(\d+)/);
             if (match) {
@@ -76,32 +73,53 @@ async function getVersion(cmd: string): Promise<string | null> {
             }
             resolve(null);
         });
-
-        proc.on('error', () => resolve(null));
     });
 }
 
-/** Execute a command and return { stdout, stderr, exitCode }. */
+/** 将命令字符串拆分为 executable + args（处理带引号的路径）。 */
+function parseCommand(command: string): { exe: string; args: string[] } {
+    const parts: string[] = [];
+    let current = '';
+    let inQuote = false;
+    let quoteChar = '';
+    for (const ch of command) {
+        if (inQuote) {
+            if (ch === quoteChar) { inQuote = false; }
+            else { current += ch; }
+        } else if (ch === '"' || ch === "'") {
+            inQuote = true;
+            quoteChar = ch;
+        } else if (ch === ' ' || ch === '\t') {
+            if (current) { parts.push(current); current = ''; }
+        } else {
+            current += ch;
+        }
+    }
+    if (current) parts.push(current);
+    return { exe: parts[0] || '', args: parts.slice(1) };
+}
+
+/** Execute a command via execFile (no shell) and return { stdout, stderr, exitCode }. */
 export function execAsync(
     command: string,
     options: { cwd?: string; timeout?: number } = {}
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     return new Promise((resolve, reject) => {
-        const child = exec(command, {
-            cwd: options.cwd,
-            timeout: options.timeout ?? 120_000,
-            maxBuffer: 10 * 1024 * 1024,
+        const { exe: rawExe, args } = parseCommand(command);
+        const exe = path.isAbsolute(rawExe) ? path.normalize(rawExe) : rawExe;
+        const timeout = options.timeout ?? 120_000;
+
+        execFile(exe, args, { cwd: options.cwd, timeout, windowsHide: true }, (error, stdout, stderr) => {
+            if (error && !('exitCode' in error)) {
+                // 真正的错误（找不到文件等），不是 exit code 非零
+                reject(error);
+                return;
+            }
+            resolve({
+                stdout: stdout || '',
+                stderr: stderr || '',
+                exitCode: error ? (error as any).exitCode ?? 1 : 0,
+            });
         });
-
-        let stdout = '';
-        let stderr = '';
-        child.stdout?.on('data', (d: string) => (stdout += d));
-        child.stderr?.on('data', (d: string) => (stderr += d));
-
-        child.on('close', (code) => {
-            resolve({ stdout, stderr, exitCode: code ?? 1 });
-        });
-
-        child.on('error', (err) => reject(err));
     });
 }

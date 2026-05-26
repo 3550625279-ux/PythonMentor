@@ -98,7 +98,7 @@ class StateEvaluator:
             messages=[{"role": "user", "content": "分析学生状态，只输出JSON。回复必须以 { 开始，以 } 结束。"}],
             system=prompt,
             temperature=0.1,
-            max_tokens=2048,
+            max_tokens=512,
         )
 
         # 提取 JSON
@@ -198,7 +198,10 @@ class StateEvaluator:
 
         new_state = state_map.get(result["cognitive_state"], profile.current_state)
         new_emotion = emotion_map.get(result["emotion"], profile.current_emotion)
-        new_hint = result.get("hint_level", profile.hint_level)
+        try:
+            new_hint = int(result.get("hint_level", profile.hint_level))
+        except (ValueError, TypeError):
+            new_hint = profile.hint_level
 
         profile.update(new_state, new_emotion, result.get("reason", ""))
         profile.hint_level = max(0, min(2, new_hint))

@@ -145,6 +145,10 @@ class SessionManager:
         session = self.get_active_session(student_id)
         if not session:
             session = self.create_session(student_id)
+        # 防止消息无限增长：超过 500 条时截断旧消息
+        if len(session.messages) > 500:
+            session.messages = session.messages[-400:]
+            logger.info("会话消息截断: %s (保留最近 400 条)", student_id)
         return session
 
     def add_message(self, student_id: str, session: Session, role: str, content: str):

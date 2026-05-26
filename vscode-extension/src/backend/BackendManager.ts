@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess, execFile, spawn } from 'child_process';
 import { findPython, execAsync } from './PythonDetector';
 
 type BackendStatus = 'stopped' | 'starting' | 'running' | 'error';
@@ -48,12 +48,6 @@ export class BackendManager implements vscode.Disposable {
                         progress.report({ message: 'Writing configuration...' });
                         this.writeEnvFile();
 
-                        const chromaPath = path.join(this.backendDir, 'chroma_db');
-                        if (!fs.existsSync(chromaPath)) {
-                            progress.report({ message: 'Building knowledge index (first time)...' });
-                            await this.buildIndex(pythonPath);
-                        }
-
                         progress.report({ message: 'Starting backend...' });
                         this.spawnBackend(pythonPath);
                     }
@@ -61,6 +55,22 @@ export class BackendManager implements vscode.Disposable {
             } else {
                 this.writeEnvFile();
                 this.spawnBackend(pythonPath);
+            }
+
+            // Always check and build index if needed (outside the deps block)
+            const chromaPath = path.join(this.backendDir, 'chroma_db');
+            let needsIndex = true;
+            try {
+                const sqlitePath = path.join(chromaPath, 'chroma.sqlite3');
+                needsIndex = !fs.existsSync(chromaPath) ||
+                    !fs.existsSync(sqlitePath) ||
+                    fs.statSync(sqlitePath).size < 50000;
+            } catch {
+                needsIndex = true;
+            }
+            if (needsIndex) {
+                this.outputChannel.appendLine('Building RAG knowledge index...');
+                await this.buildIndex(pythonPath);
             }
 
             const ok = await this.waitForHealth(120_000);
@@ -74,12 +84,22 @@ export class BackendManager implements vscode.Disposable {
                 if (ok2) {
                     this.setStatus('running');
                     this.startHealthMonitor();
+                    this.checkLlmConfig();
                 } else {
                     this.setStatus('error');
+                    vscode.window.showErrorMessage(
+                        'PythonMentor: Backend failed to start after retry. Check Output panel for details.',
+                        'Show Output'
+                    ).then(choice => {
+                        if (choice === 'Show Output') {
+                            this.outputChannel.show();
+                        }
+                    });
                 }
             } else {
                 this.setStatus('running');
                 this.startHealthMonitor();
+                this.checkLlmConfig();
             }
         } catch (err: any) {
             this.outputChannel.appendLine(`Auto-start failed: ${err.message}`);
@@ -170,7 +190,16 @@ export class BackendManager implements vscode.Disposable {
         this.writeEnvFile();
 
         const chromaPath = path.join(this.backendDir, 'chroma_db');
-        if (!fs.existsSync(chromaPath)) {
+        let needsIndex = true;
+        try {
+            const sqlitePath = path.join(chromaPath, 'chroma.sqlite3');
+            needsIndex = !fs.existsSync(chromaPath) ||
+                !fs.existsSync(sqlitePath) ||
+                fs.statSync(sqlitePath).size < 50000;
+        } catch {
+            needsIndex = true;
+        }
+        if (needsIndex) {
             this.outputChannel.appendLine('Building RAG knowledge index...');
             await this.buildIndex(pythonPath);
         }
@@ -181,8 +210,8 @@ export class BackendManager implements vscode.Disposable {
     private async checkDepsInstalled(pythonPath: string): Promise<boolean> {
         try {
             const cmd = pythonPath.includes(' ')
-                ? `${pythonPath} -c "import fastapi"`
-                : `"${pythonPath}" -c "import fastapi"`;
+                ? `"${pythonPath}" -c "import fastapi"`
+                : `${pythonPath} -c "import fastapi"`;
             const result = await execAsync(cmd, { cwd: this.backendDir, timeout: 10_000 });
             return result.exitCode === 0;
         } catch {
@@ -192,8 +221,8 @@ export class BackendManager implements vscode.Disposable {
 
     private async installDeps(pythonPath: string): Promise<void> {
         const cmd = pythonPath.includes(' ')
-            ? `${pythonPath} -m pip install . --quiet`
-            : `"${pythonPath}" -m pip install . --quiet`;
+            ? `"${pythonPath}" -m pip install . --quiet`
+            : `${pythonPath} -m pip install . --quiet`;
 
         this.outputChannel.appendLine(`Running: ${cmd}`);
         const result = await execAsync(cmd, {
@@ -215,13 +244,15 @@ export class BackendManager implements vscode.Disposable {
         const lines: string[] = [
             `LLM_BACKEND=${llmBackend}`,
             '',
-            '# Claude',
+            '# Claude / Anthropic-compatible',
             `CLAUDE_API_KEY=${config.get<string>('claudeApiKey', '')}`,
-            `CLAUDE_MODEL=claude-sonnet-4-20250514`,
+            `CLAUDE_BASE_URL=${config.get<string>('claudeBaseUrl', '')}`,
+            `CLAUDE_MODEL=${config.get<string>('claudeModel', 'claude-sonnet-4-20250514')}`,
             '',
-            '# OpenAI',
+            '# OpenAI / OpenAI-compatible (DeepSeek, Xiaomi, etc.)',
             `OPENAI_API_KEY=${config.get<string>('openaiApiKey', '')}`,
-            `OPENAI_MODEL=gpt-4o`,
+            `OPENAI_BASE_URL=${config.get<string>('openaiBaseUrl', '')}`,
+            `OPENAI_MODEL=${config.get<string>('openaiModel', 'gpt-4o')}`,
             '',
             '# Ollama',
             `OLLAMA_URL=${config.get<string>('ollamaUrl', 'http://localhost:11434')}`,
@@ -231,6 +262,12 @@ export class BackendManager implements vscode.Disposable {
             `EMBEDDING_API_KEY=${config.get<string>('embeddingApiKey', '')}`,
             `EMBEDDING_API_MODEL=${config.get<string>('embeddingModel', 'text-embedding-v4')}`,
             `EMBEDDING_API_URL=${config.get<string>('embeddingApiUrl', 'https://dashscope.aliyuncs.com/compatible-mode/v1')}`,
+            '',
+            '# LLM Parameters',
+            `MAX_TOKENS=${config.get<number>('maxTokens', 2048)}`,
+            `TEMPERATURE=${config.get<number>('temperature', 0.7)}`,
+            `TOP_P=${config.get<number>('topP', 1.0)}`,
+            `CONTEXT_WINDOW=${config.get<number>('contextWindow', 40)}`,
         ];
 
         const envPath = path.join(this.backendDir, '.env');
@@ -239,8 +276,8 @@ export class BackendManager implements vscode.Disposable {
 
     private async buildIndex(pythonPath: string): Promise<void> {
         const cmd = pythonPath.includes(' ')
-            ? `${pythonPath} -m rag.indexer`
-            : `"${pythonPath}" -m rag.indexer`;
+            ? `"${pythonPath}" -m rag.indexer`
+            : `${pythonPath} -m rag.indexer`;
 
         this.outputChannel.appendLine('Building RAG index...');
         const result = await execAsync(cmd, {
@@ -266,10 +303,28 @@ export class BackendManager implements vscode.Disposable {
         this.outputChannel.appendLine(`Starting backend: ${pythonPath} "${mainPy}"`);
         this.outputChannel.appendLine(`Backend dir: ${this.backendDir}`);
 
-        const child = spawn(pythonPath, [mainPy], {
+        // 直接 spawn Python，不用 shell（避免 cmd.exe ENOENT 问题）
+        // py -3 需要拆分为 executable + args
+        const [rawExe, ...extraArgs] = pythonPath.split(/\s+/);
+        // 规范化路径：resolve 处理相对路径和 ..，normalize 处理 Unicode
+        const exe = path.resolve(rawExe);
+        this.outputChannel.appendLine(`Resolved exe: ${exe}`);
+
+        this.outputChannel.appendLine(`[diag] rawExe="${rawExe}" exe="${exe}"`);
+        this.outputChannel.appendLine(`[diag] existsSync=${fs.existsSync(exe)}`);
+        this.outputChannel.appendLine(`[diag] platform=${process.platform} ComSpec=${process.env.ComSpec}`);
+
+        // Windows: 用 shell + 显式 ComSpec 路径，解决 spawn ENOENT
+        // 其他平台: 直接 spawn
+        const isWin = process.platform === 'win32';
+        const shellOpt = isWin ? (process.env.ComSpec || true) : false;
+        this.outputChannel.appendLine(`[diag] isWin=${isWin} shell=${shellOpt}`);
+
+        const child = spawn(exe, [...extraArgs, mainPy], {
             cwd: this.backendDir,
             stdio: ['ignore', 'pipe', 'pipe'],
             windowsHide: true,
+            shell: shellOpt,
         });
 
         this.process = child;
@@ -313,6 +368,11 @@ export class BackendManager implements vscode.Disposable {
         this.outputChannel.appendLine(`Waiting for backend at ${baseUrl}/health (timeout: ${maxMs}ms)`);
 
         while (Date.now() < deadline) {
+            // 进程已退出则提前终止（端口冲突、启动错误等）
+            if (!this.process) {
+                this.outputChannel.appendLine('Backend process exited during health check.');
+                return false;
+            }
             try {
                 const resp = await fetch(`${baseUrl}/health`, {
                     signal: AbortSignal.timeout(2000),
@@ -355,6 +415,36 @@ export class BackendManager implements vscode.Disposable {
                 }
             }
         }, 30_000);
+    }
+
+    private checkLlmConfig(): void {
+        const config = vscode.workspace.getConfiguration('python-mentor');
+        const llmBackend = config.get<string>('llmBackend', 'ollama');
+
+        const missing: string[] = [];
+
+        // Check LLM API key
+        if (llmBackend === 'claude' && !config.get<string>('claudeApiKey', '')) {
+            missing.push('Claude API Key');
+        } else if (llmBackend === 'openai' && !config.get<string>('openaiApiKey', '')) {
+            missing.push('OpenAI API Key');
+        }
+
+        // Check embedding API key (required for RAG knowledge retrieval)
+        if (!config.get<string>('embeddingApiKey', '')) {
+            missing.push('Embedding API Key');
+        }
+
+        if (missing.length > 0) {
+            vscode.window.showWarningMessage(
+                `PythonMentor: Missing ${missing.join(' and ')}. Please configure to use full functionality.`,
+                'Configure API Keys'
+            ).then(choice => {
+                if (choice === 'Configure API Keys') {
+                    vscode.commands.executeCommand('python-mentor.configureApiKeys');
+                }
+            });
+        }
     }
 
     private setStatus(newStatus: BackendStatus): void {

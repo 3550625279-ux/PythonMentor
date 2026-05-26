@@ -64,7 +64,7 @@ class SessionSummarizer:
                 messages=[{"role": "user", "content": "提取会话摘要，只输出JSON。回复必须以 { 开始，以 } 结束。"}],
                 system=prompt,
                 temperature=0.2,
-                max_tokens=2048,
+                max_tokens=512,
             )
             result = self._extract_json(response)
             if result:
@@ -97,13 +97,24 @@ class SessionSummarizer:
             except json.JSONDecodeError:
                 pass
 
-        start = text.rfind('{')
-        end = text.rfind('}')
-        if start != -1 and end > start:
-            try:
-                return json.loads(text[start:end + 1])
-            except json.JSONDecodeError:
-                pass
+        # 括号深度匹配 — 从每个 '{' 开始计算深度，找到对应的 '}'
+        for i in range(len(text) - 1, -1, -1):
+            if text[i] == '{':
+                depth = 0
+                for j in range(i, len(text)):
+                    if text[j] == '{':
+                        depth += 1
+                    elif text[j] == '}':
+                        depth -= 1
+                    if depth == 0:
+                        candidate = text[i:j + 1]
+                        try:
+                            result = json.loads(candidate)
+                            if isinstance(result, dict):
+                                return result
+                        except json.JSONDecodeError:
+                            break
+                        break
 
         return None
 

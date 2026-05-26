@@ -19,7 +19,7 @@ def get_provider() -> LLMProvider:
         from .openai_provider import OpenAIProvider
         if not settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY 未设置")
-        _provider = OpenAIProvider(api_key=settings.openai_api_key, model=settings.openai_model)
+        _provider = OpenAIProvider(api_key=settings.openai_api_key, model=settings.openai_model, base_url=settings.openai_base_url)
     elif settings.llm_backend == "ollama":
         _provider = OllamaProvider(base_url=settings.ollama_url, model=settings.ollama_model)
     else:
@@ -61,6 +61,7 @@ def get_critique_provider() -> LLMProvider | None:
             _critique_provider = OpenAIProvider(
                 api_key=settings.openai_api_key,
                 model=settings.critique_model,
+                base_url=settings.openai_base_url,
             )
         else:
             _critique_provider = OllamaProvider(

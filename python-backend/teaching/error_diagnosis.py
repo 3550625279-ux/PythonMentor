@@ -12,32 +12,42 @@ class ParsedError:
 class ErrorDiagnosis:
     """Python 错误诊断模块 — 解析 traceback，生成诊断上下文。"""
 
-    TRACEBACK_PATTERN = re.compile(
-        r'Traceback \(most recent call last\):\s*'
-        r'(?:File "(?P<file>[^"]+)", line (?P<line>\d+), in .+\n'
-        r'(?:  .+\n)*)?'
-        r'(?P<error_type>\w+(?:Error|Exception))(?:: (?P<error_msg>.*))?',
-        re.MULTILINE
-    )
+    FILE_LINE_PATTERN = re.compile(r'File "(?P<file>[^"]+)", line (?P<line>\d+)')
 
     def parse_traceback(self, traceback_text: str) -> ParsedError | None:
-        """解析 Python traceback 文本。"""
-        match = self.TRACEBACK_PATTERN.search(traceback_text)
-        if not match:
+        """解析 Python traceback 文本。
+
+        从最后一行提取错误类型/消息，从底部向上找最后一个 File/line
+        （即错误实际发生的内层帧）。
+        """
+        if not traceback_text or "Error" not in traceback_text and "Exception" not in traceback_text:
             return None
 
         lines = traceback_text.strip().split('\n')
-        last_line = lines[-1] if lines else ""
-        error_match = re.match(r'(\w+(?:Error|Exception))(.*)', last_line)
+        if not lines:
+            return None
 
+        # 错误类型/消息 — 最后一行
+        last_line = lines[-1].strip()
+        error_match = re.match(r'(\w+(?:Error|Exception))(.*)', last_line)
         error_type = error_match.group(1) if error_match else "Unknown"
         error_message = error_match.group(2).strip(": ") if error_match else ""
+
+        # 文件/行号 — 从下往上找最后一个 File "..." line N（内层帧）
+        file_path = "unknown"
+        line_number = 0
+        for line in reversed(lines):
+            fl_match = self.FILE_LINE_PATTERN.search(line)
+            if fl_match:
+                file_path = fl_match.group("file")
+                line_number = int(fl_match.group("line"))
+                break
 
         return ParsedError(
             error_type=error_type,
             error_message=error_message,
-            file_path=match.group("file") or "unknown",
-            line_number=int(match.group("line")) if match.group("line") else 0,
+            file_path=file_path,
+            line_number=line_number,
             traceback_text=traceback_text,
         )
 

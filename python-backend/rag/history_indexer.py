@@ -17,7 +17,6 @@ class HistoryIndexer:
     def __init__(
         self,
         db_path: str,
-        model_name: str = "all-MiniLM-L6-v2",
         api_key: str = "",
         api_model: str = "text-embedding-v4",
         api_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -25,7 +24,7 @@ class HistoryIndexer:
     ):
         self.embedder = create_embedding_provider(
             api_key=api_key, model=api_model, base_url=api_url,
-            dimensions=dimensions, fallback_model=model_name,
+            dimensions=dimensions,
         )
         client = chromadb.PersistentClient(path=db_path)
         self.collection = client.get_or_create_collection(

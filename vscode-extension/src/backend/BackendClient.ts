@@ -6,12 +6,11 @@ export interface ChatEvent {
 }
 
 export class BackendClient {
-    private baseUrl: string;
     private maxRetries: number = 2;
 
-    constructor() {
+    private getBaseUrl(): string {
         const config = vscode.workspace.getConfiguration('python-mentor');
-        this.baseUrl = config.get<string>('backendUrl', 'http://localhost:8000');
+        return config.get<string>('backendUrl', 'http://localhost:8000');
     }
 
     async *chatStream(
@@ -26,7 +25,7 @@ export class BackendClient {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 30000);
 
-                const response = await fetch(`${this.baseUrl}/api/chat`, {
+                const response = await fetch(`${this.getBaseUrl()}/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -41,7 +40,23 @@ export class BackendClient {
                 clearTimeout(timeout);
 
                 if (!response.ok) {
-                    throw new Error(`Backend error: ${response.status} ${response.statusText}`);
+                    let detail = response.statusText;
+                    try {
+                        const body = await response.text();
+                        const json = JSON.parse(body);
+                        detail = json.detail || json.message || body;
+                    } catch {}
+                    if (response.status === 500) {
+                        throw new Error(
+                            `Backend error (500): LLM service may be unavailable. ` +
+                            `Please check:\n` +
+                            `1. LLM API key is configured (Claude/OpenAI)\n` +
+                            `2. Embedding API key is configured (for RAG)\n` +
+                            `3. Ollama is running (if using Ollama)\n` +
+                            `Use "PythonMentor: Configure API Keys" to set up.`
+                        );
+                    }
+                    throw new Error(`Backend error: ${response.status} ${detail}`);
                 }
 
                 const reader = response.body?.getReader();
@@ -84,10 +99,13 @@ export class BackendClient {
 
             } catch (error: any) {
                 lastError = error;
-                if (attempt < this.maxRetries) {
+                // 只对网络错误重试，HTTP 错误直接抛出
+                const isNetworkError = !error.message?.startsWith('Backend error:');
+                if (isNetworkError && attempt < this.maxRetries) {
                     await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
                     continue;
                 }
+                throw error;
             }
         }
 
@@ -96,7 +114,7 @@ export class BackendClient {
 
     async clearSession(studentId: string = 'default'): Promise<void> {
         try {
-            await fetch(`${this.baseUrl}/api/chat/clear?student_id=${studentId}`, {
+            await fetch(`${this.getBaseUrl()}/api/chat/clear?student_id=${studentId}`, {
                 method: 'POST'
             });
         } catch {
@@ -106,7 +124,7 @@ export class BackendClient {
 
     async endSession(studentId: string = 'default'): Promise<any> {
         try {
-            const response = await fetch(`${this.baseUrl}/api/chat/end`, {
+            const response = await fetch(`${this.getBaseUrl()}/api/chat/end`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ student_id: studentId })
@@ -122,7 +140,7 @@ export class BackendClient {
 
     async healthCheck(): Promise<boolean> {
         try {
-            const response = await fetch(`${this.baseUrl}/health`, {
+            const response = await fetch(`${this.getBaseUrl()}/health`, {
                 method: 'GET',
                 signal: AbortSignal.timeout(5000)
             });
